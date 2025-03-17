@@ -1,0 +1,683 @@
+---
+title: "ONAQ October-November 2024 Transects"
+author: "Alexi C. Besser"
+format:
+  html:
+    embed-resources: true
+    code-background: true
+    code-line-numbers: true
+toc: true
+editor: visual
+---
+
+# READ ME
+
+Analyses of modified LPI transect data collected at the Onaqui National Ecological Observatory Network Site 4-7 November 2024. 50 m transects:
+
+# Load Packages
+
+```{r load_packages}
+
+library(readr)
+library(plyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+
+```
+
+# Read In and Clean Up Data
+
+There are 30 csv files each containing data for half a transect.
+
+```{r import_data}
+
+### LEVEL 0 DATA ###
+# specify folder containing trasect data (individual csv files are considered Level 0 data)
+ONAQ_iPad_data_files <- dir("~/Downloads/ONAQ_Final_Fall_2024/iPad")
+
+# read in csv files and create a new column for transect id
+# set working directory
+setwd("~/Downloads/ONAQ_Final_Fall_2024/iPad")
+ONAQ_iPad_data <- read_csv(ONAQ_iPad_data_files, id = "Transect") %>%
+   mutate(Transect = str_remove_all(Transect, "_B.csv"))
+
+# specify folder containing trasect data (individual csv files are considered Level 0 data)
+ONAQ_Tablet_data_files <- dir("~/Downloads/ONAQ_Final_Fall_2024/Tablet")
+
+# read in csv files and create a new column for transect id
+setwd("~/Downloads/ONAQ_Final_Fall_2024/Tablet")
+ONAQ_Tablet_data <- read_csv(ONAQ_Tablet_data_files, id = "Transect") %>%
+   mutate(Transect = str_remove_all(Transect, "_A.csv"))
+
+# need to remove "Speed" and "Bearing" columns from the iPad data frame to merge it with the Tablet data frame
+ONAQ_Tablet_data <- ONAQ_Tablet_data %>% select(-Speed, -Bearing)
+  
+# set working directory
+setwd("~/Downloads/ONAQ_Final_Fall_2024")
+
+### LEVEL 1 DATA ###
+### ONAQ_all_data ###
+
+# merge iPad and Tablet data frames
+ONAQ_all_data <- rbind(ONAQ_iPad_data, ONAQ_Tablet_data)
+
+# write a csv file of the compiled (Level 1) data
+write.csv(ONAQ_all_data, "~/Desktop/ONAQ_LPI_L1_Fall_2024_Data.csv")
+
+```
+
+```{r remove_NA}
+
+# if all the transect data columns are empty, delete
+ONAQ_trimmed_data <- ONAQ_all_data[!(is.na(ONAQ_all_data$Top_layer) & is.na(ONAQ_all_data$Top_layer_other) & is.na(ONAQ_all_data$Lower_1) & is.na(ONAQ_all_data$Lower_1_other) & is.na(ONAQ_all_data$Lower_2) & is.na(ONAQ_all_data$Lower_2_other) & is.na(ONAQ_all_data$Lower_3) & is.na(ONAQ_all_data$Lower_3_other) & is.na(ONAQ_all_data$Litter) & is.na(ONAQ_all_data$Litter_other) & is.na(ONAQ_all_data$Soil_surface) & is.na(ONAQ_all_data$Microsite) & is.na(ONAQ_all_data$Microsite_other)),] 
+
+# create a data frame for duplicate points 
+ONAQ_duplicate_points <- ONAQ_trimmed_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() 
+
+# delete rows that have duplicates with conflicting data
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ020" & ONAQ_trimmed_data$Remarks == "16"),]
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ026" & ONAQ_trimmed_data$Remarks == "20"),]
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ011" & ONAQ_trimmed_data$Remarks == "28"),]
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ045" & ONAQ_trimmed_data$Remarks == "36"),]
+
+```
+
+Investigate "NA" for Top_layer. And look at unique values for Top_layer_other to check for typos.
+
+```{r clean_Top_layer}
+
+# create a data frame for rows with an "NA" for Top_layer
+NA_Top_layer_tab <- subset(ONAQ_trimmed_data, is.na(Top_layer))
+
+# there is one row with an "NA" for Top_layer
+# ONAQ003 (Remarks "6") has an "L-OTHER" for Lower_1 and "JUOS" for Lower_1_other
+# because ONAQ003 (Remarks "7") has an "L-OTHER" for Top_layer and "JUOS" for Top_layer_other plus a similar Top_height, we will assume this should be the top layer
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Top_layer"] <- "L-OTTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Top_layer_other"] <- "JUOS"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Lower_1"] <- "N"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Lower_1_other"] <- "N"
+
+# look at unique values for Top_layer_other
+Top_layer_other <- unique(ONAQ_trimmed_data$Top_layer_other)
+print(Top_layer_other)
+
+# fix typos
+
+# "JKUOS" appears once for transect ONAQ003 - this should be "JUOS"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JKUOS"] <- "JUOS"
+
+# "JUOAs" appears once for transect ONAQ030 - this should be "JUOS"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JUOAs"] <- "JUOS"
+
+# "JUKOS" appears once for transect ONAQ030 - this should be "JUOS"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JUKOS"] <- "JUOS"
+
+# 
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JUKOS"] <- "JUOS"
+
+```
+
+```{r clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+NA_Soil_surface_tab <- subset(ONAQ_trimmed_data, is.na(Soil_surface))
+
+# there are is one row that have an "NA" for Soil_surface
+
+# default Soil_surface value was "SOIL" - let's go ahead and assume any "NA" values in this column should be "SOIL"
+# if Soil_surface is "NA" paste "SOIL"
+ONAQ_trimmed_data$Soil_surface[is.na(ONAQ_trimmed_data$Soil_surface)] <- "SOIL"
+
+# rename "CRST" to "CRUST"
+ONAQ_trimmed_data$Soil_surface[ONAQ_trimmed_data$Soil_surface=="CRST"] <- "CRUST"
+
+# look at unique values for Soil_surface_other
+Soil_surface_other <- unique(ONAQ_trimmed_data$Soil_surface_other)
+print(Soil_surface_other)
+
+# fix typos
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other=="DPGRASS"] <- "D-PGRASS"
+
+```
+
+Investigate "NA" for Litter. And look at unique values for Litter_other to check for typos.
+
+```{r clean_Litter}
+
+# create a data frame for rows with an "NA" for Litter
+NA_Litter_tab <- subset(ONAQ_trimmed_data, is.na(Litter))
+
+# there is 1 row that has an "NA" for Litter, it also has zeros for all the litter depths
+# if Litter is "NA" paste "N"
+ONAQ_trimmed_data$Litter[is.na(ONAQ_trimmed_data$Litter)] <- "N"
+
+# rename "N" to "NONE"
+ONAQ_trimmed_data$Litter[ONAQ_trimmed_data$Litter=="N"] <- "NONE"
+
+# create a new data frame for rows that have "NONE" for Litter but still have a litter depth measurement
+litter_none_df <- ONAQ_trimmed_data %>%
+  filter(Litter == "NONE" & Litter_depth_center > 0 & Litter_depth_north > 0
+         & Litter_depth_east > 0 & Litter_depth_south > 0 & Litter_depth_west > 0)
+# there are none
+
+ONAQ_trimmed_data$Litter_depth_center[is.na(ONAQ_trimmed_data$Litter_depth_center)] <- 0
+ONAQ_trimmed_data$Litter_depth_north[is.na(ONAQ_trimmed_data$Litter_depth_north)] <- 0
+ONAQ_trimmed_data$Litter_depth_east[is.na(ONAQ_trimmed_data$Litter_depth_east)] <- 0
+ONAQ_trimmed_data$Litter_depth_south[is.na(ONAQ_trimmed_data$Litter_depth_south)] <- 0
+ONAQ_trimmed_data$Litter_depth_west[is.na(ONAQ_trimmed_data$Litter_depth_west)] <- 0
+
+# make sure Litter_depth values are numeric
+ONAQ_trimmed_data$Litter_depth_center <- as.numeric(ONAQ_trimmed_data$Litter_depth_center)
+ONAQ_trimmed_data$Litter_depth_north <- as.numeric(ONAQ_trimmed_data$Litter_depth_north)
+ONAQ_trimmed_data$Litter_depth_east <- as.numeric(ONAQ_trimmed_data$Litter_depth_east)
+ONAQ_trimmed_data$Litter_depth_south <- as.numeric(ONAQ_trimmed_data$Litter_depth_south)
+ONAQ_trimmed_data$Litter_depth_west <- as.numeric(ONAQ_trimmed_data$Litter_depth_west)
+
+```
+
+Investigate "NA" for Microsite.
+
+```{r clean_Microsite}
+
+# create a data frame for rows with an "NA" for Microsite
+NA_Microsite_tab <- subset(ONAQ_trimmed_data, is.na(Microsite))
+
+# there are 5 rows that have an "NA" for Microsite
+# Microsite_other also has an "NA" for all of these rows
+# 4 of these rows have no top layer
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ027" & ONAQ_trimmed_data$Remarks == "13"),]
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ027" & ONAQ_trimmed_data$Remarks == "16"),]
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ042" & ONAQ_trimmed_data$Remarks == "4"),]
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ045" & ONAQ_trimmed_data$Remarks == "20"),]
+
+# has a Top_layer of "L-OTHER" but an "NA" in the Top_layer_other column... need to delete
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ049" & ONAQ_trimmed_data$Remarks == "9"),]
+
+```
+
+Investigate Top_height.
+
+```{r clean_Top_height}
+
+# if Top_height is "NA" paste "0"
+ONAQ_trimmed_data$Top_height[is.na(ONAQ_trimmed_data$Top_height)] <- 0
+
+# make sure Top_height values are numeric
+ONAQ_trimmed_data$Top_height <- as.numeric(ONAQ_trimmed_data$Top_height)
+
+```
+
+Investigate Soil_surface.
+
+```{r clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+NA_Soil_tab <- subset(ONAQ_trimmed_data, is.na(Soil_surface))
+
+# there is one row that has an "NA" for Soil_surface
+
+# default Soil_surface value was "SOIL" - let's go ahead and assume any "NA" values in this column should be "SOIL"
+# if Soil_surface is "NA" paste "SOIL"
+ONAQ_trimmed_data$Soil_surface[is.na(ONAQ_trimmed_data$Soil_surface)] <- "SOIL"
+
+```
+
+# Top Layer Plots
+
+```{r Top_layer_transects}
+
+# first get counts, proportions, and percentages of each top layer type per transect
+TopLayer <- ONAQ_trimmed_data %>%
+  group_by(Top_layer, Transect) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+# make a bar plot
+TopLayerPlot <- ggplot(TopLayer, aes(x = Transect, y = percent, fill = Top_layer)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect", y = "Frequency (%)", fill = "Top Layer") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("navy", "#E69F00", "#56B4E9", "#009E73", "#F0E442",
+                               "#0072B2", "#D55E00", "darkgreen", "#CC79A7", "coral4",
+                               "#b66dff", "#999999", "seashell", "red", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+TopLayerPlot
+
+```
+
+```{r Top_layer_other_transects}
+
+# first, get counts, proportions, and percentages of each Top_layer_other category per transect
+TopLayerOther <- ONAQ_trimmed_data %>%
+  group_by(Top_layer_other) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+# make a bar plot
+TopLayerOtherPlot <- ggplot(TopLayerOther, aes(x = Transect, y = percent, fill = Top_layer_other)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect", y = "Frequency (%)", fill = "Top Layer Other") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("navy", "#E69F00", "#56B4E9", "#009E73", "#F0E442",
+                               "#0072B2", "#D55E00", "darkgreen", "#CC79A7", "coral4",
+                               "#b66dff", "#999999", "seashell", "red", "darkmagenta",
+                               "olivedrab3", "#000000"), 
+                    name = NULL, 
+                    breaks = c("BOGR", "GUSA", "ARTR", "JUOS", "EPTO", "ACHY",
+                               "PI", "SAVE", "KRLA", "SATR", "EPVI", "NONE"),
+                    labels = c("BOGR", "GUSA", "ARTR", "JUOS", "EPTO", "ACHY",
+                               "PI", "SAVE", "KRLA", "SATR", "EPVI", "NONE")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+TopLayerOtherPlot
+
+```
+
+# Soil Surface Plots
+
+## Soil Surface Frequencies Across Transects
+
+### Soil_surface Plot
+
+```{r Soil_surface_transects}
+
+# first, get counts, proportions, and percentages of each soil surface type per transect
+SoilSurface <- ONAQ_trimmed_data %>%
+  group_by(Soil_surface, Transect) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+# make a bar plot
+SoilSurfacePlot <- ggplot(SoilSurface, aes(x = Transect, y = percent, fill = Soil_surface)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect", y = "Frequency (%)", fill = "Soil Surface") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("gray20", "#E69F00", "#56B4E9", "coral4", "#D55E00",
+                               "burlywood", "#999999", "burlywood4",
+                               "darkslateblue")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+SoilSurfacePlot
+
+```
+
+## Top Layer Frequencies Across Soil Surfaces
+
+```{r Top_layer_Soil_surface}
+
+# first, get counts, proportions, and percentages of each top layer type per transect
+SoilTopLayer <- ONAQ_trimmed_data %>%
+  group_by(Top_layer_other, Soil_surface) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Soil_surface) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+# make a bar plot
+SoilTopLayerPlot <- ggplot(SoilTopLayer, aes(x = Soil_surface, y = percent, fill = Top_layer_other)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Soil Surface", y = "Frequency (%)", fill = "Top Layer") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("burlywood4", "#999999", "burlywood", "mediumpurple4",
+                               "coral4", "#D55E00", "#E69F00", "#F0E442", "#009E73",
+                               "#CC79A7", "#0072B2", "cornsilk2", "darkgreen",
+                               "olivedrab3", "slategray1", "violetred1", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+SoilTopLayerPlot
+
+```
+
+# Litter Plots
+
+## Litter Types and Depths Across Transects
+
+### Litter Plot
+
+```{r Litter_transects}
+
+# first, get counts, proportions, and percentages of each litter type per transect
+LitterTransect <- ONAQ_trimmed_data %>%
+  group_by(Litter, Transect) %>%
+  dplyr::summarize(totdepth_center = sum(Litter_depth_center),
+                   totdepth_north = sum(Litter_depth_north),
+                   totdepth_east = sum(Litter_depth_east),
+                   totdepth_south = sum(Litter_depth_south),
+                   totdepth_west = sum(Litter_depth_west),
+                   n = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = n / sum(n)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+# make a bar plot
+LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litter)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect", y = "Frequency (%)", fill = "Litter") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("coral4", "#009E73", "burlywood4",
+                               "black", "orange", "#999999")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+LitterPlot
+
+```
+
+### Litter_depth Plot
+
+Make plot that shows litter type and cumulative depth across transects.
+
+```{r Litter_depth_transects}
+
+# make a bar plot
+LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth_center,
+                                           fill = Litter)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
+                               "black", "#999999"), 
+                    name = NULL, 
+                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
+                               "OTHER"),
+                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
+                               "Woody Litter", "No Litter", "Other Litter")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = c(.2,.7),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+LitterDepthPlot
+
+```
+
+## Litter Types and Depths Across Soil Surfaces
+
+Make a plot of litter type and cumulative depth as a function of soil surface.
+
+```{r Litter_depth_Soil_surface}
+
+# first, get total depths of each litter type per soil surface type
+LitterSoil <- ONAQ_trimmed_data %>%
+  group_by(Soil_surface, Litter) %>%
+  dplyr::summarize(totdepth_center = sum(Litter_depth_center),
+                   totdepth_north = sum(Litter_depth_north),
+                   totdepth_east = sum(Litter_depth_east),
+                   totdepth_south = sum(Litter_depth_south),
+                   totdepth_west = sum(Litter_depth_west),
+                   n = n(), .groups = "drop")
+
+# make a bar plot
+LitterSoilPlot <- ggplot(LitterSoil, aes(x = Soil_surface, y = totdepth_center,
+                                         fill = Litter)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Soil Surface", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
+                               "black", "#999999"), 
+                    name = NULL, 
+                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
+                               "OTHER"),
+                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
+                               "Woody Litter", "No Litter", "Other Litter")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+LitterSoilPlot
+
+```
+
+## Litter Types and Depths Across Microsites
+
+```{r Litter_depth_Microsite}
+
+# look at unique values for Litter_other
+Litter_other <- unique(ONAQ_trimmed_data$Litter_other)
+print(Litter_other)
+
+# Make a new column
+ONAQ_trimmed_data$Litter_Plotting <- ONAQ_trimmed_data$Litter
+
+# if Litter_other is "H_W" paste "Nonwoody and Woody Litter"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Litter_other[i]) &&
+      ONAQ_trimmed_data$Litter_other[i] == "H_W")
+    {ONAQ_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+# if Litter_other is "H_W_B" paste "Nonwoody and Woody Litter"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Litter_other[i]) &&
+      ONAQ_trimmed_data$Litter_other[i] == "H_W_B")
+    {ONAQ_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+# if Litter_other is "H_B" paste "Nonwoody and Woody Litter"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Litter_other[i]) &&
+      ONAQ_trimmed_data$Litter_other[i] == "H_W")
+    {ONAQ_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+# first, get counts, proportions, and percentages of each litter type per top layer category
+LitterMic <- ONAQ_trimmed_data %>%
+  group_by(Litter_Plotting, Microsite) %>%
+  dplyr::summarize(totdepth_center = sum(Litter_depth_center),
+                   totdepth_north = sum(Litter_depth_north),
+                   totdepth_east = sum(Litter_depth_east),
+                   totdepth_south = sum(Litter_depth_south),
+                   totdepth_west = sum(Litter_depth_west),
+                   n = n(),
+                   mean_totdepth_all = (sum(Litter_depth_center) +
+                     sum(Litter_depth_north) + sum(Litter_depth_east) +
+                     sum(Litter_depth_south) + sum(Litter_depth_west))/(5*n),
+                   .groups = "drop")
+
+# next, calculate the total number of observations per microsite
+MicroFreq <- ONAQ_trimmed_data %>%
+  group_by(Microsite) %>%
+  dplyr::summarize(nMic = n(), .groups = "drop")
+
+# merge the MicroFreq data frame with the LitterStatsMicro data frame
+LitterMic <- LitterMic %>%
+  left_join(MicroFreq, by = c("Microsite"))
+
+# calculate the total number of observations
+total_mic_counts <- sum(LitterMic$n)
+
+# calculate the maximum sum of mean litter depths for a top layer category
+sum_mean_depth_max_mic <- LitterMic %>%
+  group_by(Microsite) %>%
+  summarize(sum_mean_depth = sum(mean_totdepth_all)) %>%
+  summarize(sum_mean_depth_max = max(sum_mean_depth)) %>%
+  pull(sum_mean_depth_max)
+
+# calculate the maximum total number of observations per microsite
+mic_freq_max <- max(LitterMic$nMic)
+
+LitterMicPlot <- ggplot(LitterMic, aes(x = Microsite, y = mean_totdepth_all,
+                                       fill = Litter_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Microsite", y = "Mean Litter Depth (mm)", fill = "Litter Type") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  geom_point(aes(y = nMic*(sum_mean_depth_max_mic/mic_freq_max), fill = "n"),
+             size = 3, pch = 21, color = "black") +
+  scale_fill_manual(values = c("burlywood", "#009E73", "#006B4E", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"), 
+                    name = NULL, 
+                    breaks = c("LT-C", "LT-H", "Nonwoody and Woody Litter",
+                               "LT-W", "DUNG", "OTHER", "NONE", "n"),
+                    labels = c("Cactus Litter", "Nonwoody Litter",
+                               "Nonwoody and Woody Litter", "Woody Litter",
+                               "Dung", "Other Litter", "No Litter", "Count")) +
+  scale_y_continuous(
+    name = "Mean Litter Depth (mm)",
+    limits = c(0, 40),
+    sec.axis = sec_axis(~ . * (mic_freq_max/sum_mean_depth_max_mic), 
+                        name = "Number of Observations")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = (c(0.6, 0.7)),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) +
+  ggtitle(label = "ONAQ", subtitle = "October-November 2024") +
+  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 12, hjust = 0.5))
+
+LitterMicPlot
+
+ggsave("~/Desktop/ONAQ_Microsite_Mean_Litter.pdf", LitterMicPlot, width = 10,
+       height = 6)
+
+# A LOT of the "OTHER" litter type is actually just a combination of litter types
+# need to work on some code to categorize the "OTHER" litter types better
+
+```
+
+```{r}
+
+LitterTransect_all <- ONAQ_trimmed_data %>%
+  group_by(Transect) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center), n = n(), 
+                   elev = mean(Elevation), .groups = "drop")
+
+elev_lm <- lm(totdepth ~ elev, data = LitterTransect_all)
+summary(elev_lm)
+
+elev_depth <- ggplot(LitterTransect_all, aes(x = elev, y = totdepth)) +
+  geom_point(pch = 19, size = 5) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = TRUE, color = "black") +
+  stat_poly_eq(use_label("eq"), formula = y ~ x) +
+  stat_poly_eq(use_label("R2", "P"), formula = y ~ x, label.y = 0.9) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Elevation (m)", y = "Litter Depth (mm)", fill = "Litter Type") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=14),
+    axis.text.y = element_text(color="black", size=14),
+    legend.title = element_text(color="black", size=14),
+    legend.text = element_text(color="black", size=14),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=16),
+    axis.title.y = element_text(color="black", size=16, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+elev_depth
+
+```
