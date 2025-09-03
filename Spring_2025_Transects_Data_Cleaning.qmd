@@ -20,6 +20,7 @@ A table of common plant codes can be found in the shared Google Drive and in ASU
 
 ```{r setup}
 
+library(tidyr)
 library(here)
 library(readr)
 library(plyr)
@@ -792,10 +793,12 @@ write.csv(JORN_quad_samp_log, "JORN_Litter_Quadrat_Sample_Log_Spring_2025.csv", 
 # FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
 MOAB_L0_Dropbox_folder <- "https://www.dropbox.com/scl/fo/r11axu2km65ein82yr71i/ANi_MnnRHHhEYmnwgjDYEQw?rlkey=t043n6k9zhqew2xgk3kig0ocr&st=riw2t9qn&dl=1"
 
-# specify the local folder containing the downloaded L0 transect data
+# Alexi: specify the local folder containing the downloaded L0 transect data
 setwd("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
 MOAB_L0_data_files <- dir("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
 
+# Dellena
+MOAB_L0_data_files <- dir("Spring_2025/csv_files/")
 
 ### LEVEL 1 DATA ###
 
@@ -804,6 +807,7 @@ MOAB_L1_data <- read_csv(MOAB_L0_data_files, id = "Transect") %>%
   mutate(Transect = str_remove_all(Transect, ".csv")) %>%
   mutate(Transect = str_remove_all(Transect, "_1")) %>%
   mutate(Transect = str_remove_all(Transect, "_2"))
+
 
 ```
 
@@ -829,7 +833,11 @@ Investigate and rectify duplicate rows.
 MOAB_duplicate_points <- MOAB_L1_data %>%
   group_by(Transect, Remarks) %>%
   filter(n() > 1) %>%
-  ungroup() 
+  ungroup()
+
+MOAB_satellite <- MOAB_duplicate_points %>%
+  filter(`Instrument Ht` == 1.74) %>%
+  select(-c(Top_layer:Quadrat_checklist))
 
 # there are 121 rows of duplicate points
 MOAB_trimmed_data <- MOAB_L1_data
