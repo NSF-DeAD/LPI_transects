@@ -798,7 +798,14 @@ setwd("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
 MOAB_L0_data_files <- dir("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
 
 # Dellena
-# MOAB_L0_data_files <- dir("Spring_2025/csv_files/")
+#MOAB_L0_data_files <- dir("Spring_2025/csv_files/")
+
+# Dellena: read in L0 csv files and create a new column for transect ID
+#MOAB_L1_data <- read_csv(file.path("Spring_2025/csv_files/",
+#                                   MOAB_L0_data_files), id = "Transect") %>%
+#  mutate(Transect = str_remove_all(Transect, ".csv")) %>%
+#  mutate(Transect = str_remove_all(Transect, "_1")) %>%
+#  mutate(Transect = str_remove_all(Transect, "_2"))
 
 ### LEVEL 1 DATA ###
 
@@ -849,12 +856,18 @@ MOAB_trimmed_data <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & M
 MOAB_duplicate_points <- MOAB_duplicate_points[!(MOAB_duplicate_points$Transect=="MOAB135"),]
 
 
-# Dellena's work
-MOAB_satellite <- MOAB_duplicate_points %>%
+# Creating separate data-frames for satellite data, where satellite height is 1.74 m and the plant information data-frame where satellite height is 0 m and then binding them together, removing the rows of NA - written by Dellena
+
+# NOTE: T 103 remark 45 of the heights == 1.74 had writing that gets removed with first negative selection below, this also creates 2 ID columns, from both satellites and time columns, chose which you want or if you want to name them different things - denoted by .x and .y
+
+MOAB_dup_NAcols_removed <- MOAB_duplicate_points %>%
+  #filter(Remarks == 1) %>%
   filter(`Instrument Ht` == 1.74) %>%
-  select(-c(Top_layer:Quadrat_checklist))
-
-
+  select(-c(Top_layer:Quadrat_checklist)) %>%
+  merge(MOAB_duplicate_points %>%
+    filter(`Instrument Ht` == 0) %>%
+    select(-c(Geometry:`Ortho Height`, `Fix ID`:`Satellites in Use`)), 
+    by = c("Transect", "Remarks"))
 
 # need to finish this because it's overwhelming... is there a for loop or something similar that could work?
 
