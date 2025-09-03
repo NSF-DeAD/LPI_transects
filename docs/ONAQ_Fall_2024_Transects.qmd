@@ -23,6 +23,7 @@ library(plyr)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(ggpmisc)
 
 ```
 
@@ -219,7 +220,7 @@ ONAQ_trimmed_data$Top_height <- as.numeric(ONAQ_trimmed_data$Top_height)
 
 Investigate Soil_surface.
 
-```{r clean_Soil_surface}
+```{r}
 
 # create a data frame for rows with an "NA" for Soil_surface
 NA_Soil_tab <- subset(ONAQ_trimmed_data, is.na(Soil_surface))
@@ -235,6 +236,8 @@ ONAQ_trimmed_data$Soil_surface[is.na(ONAQ_trimmed_data$Soil_surface)] <- "SOIL"
 # Top Layer Plots
 
 ```{r Top_layer_transects}
+
+ONAQ_trimmed_data <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
 
 # first get counts, proportions, and percentages of each top layer type per transect
 TopLayer <- ONAQ_trimmed_data %>%
@@ -275,7 +278,7 @@ TopLayerPlot
 
 # first, get counts, proportions, and percentages of each Top_layer_other category per transect
 TopLayerOther <- ONAQ_trimmed_data %>%
-  group_by(Top_layer_other) %>%
+  group_by(Top_layer_other, Transect) %>%
   dplyr::summarize(count = n(), .groups = "drop") %>%
   group_by(Transect) %>%
   dplyr::mutate(proportion = count / sum(count)) %>%
@@ -311,6 +314,100 @@ TopLayerOtherPlot <- ggplot(TopLayerOther, aes(x = Transect, y = percent, fill =
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 TopLayerOtherPlot
+
+```
+
+```{r}
+
+# create a new column and paste the value from the Top_layer column in it
+ONAQ_trimmed_data$Top_Plotting <- ONAQ_trimmed_data$Top_layer
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "GUSA" paste "L-SUBS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "GUSA" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ARTR" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "ARTR" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "JUOS" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "JUOS" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SAVE" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "SAVE" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SATR" paste "L-FORB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "SATR" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-FORB"}
+}
+
+
+# calculate mean elevation per site
+MeanElev <- ONAQ_trimmed_data %>%
+  group_by(Transect) %>%
+  dplyr::summarize(Mean.Elevation = mean(Elevation))
+
+MeanElev <- MeanElev[order(MeanElev$Mean.Elevation), ]
+
+MeanElev$Mean.Elevation <- factor(MeanElev$Mean.Elevation, levels = unique(MeanElev$Mean.Elevation))
+
+elevation.order <- as.list(MeanElev$Transect)
+
+print(elevation.order)
+
+```
+
+```{r}
+
+# first, get counts, proportions, and percentages of each top layer type per transect
+NewTopLayer <- ONAQ_trimmed_data %>%
+  group_by(Top_Plotting, Transect) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+NewTopLayer$Transect <- factor(NewTopLayer$Transect, levels = elevation.order)
+
+# make a bar plot
+NewTopLayerPlot <- ggplot(NewTopLayer, aes(x = Transect, y = percent, fill = Top_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect (Low to High Elevation)", y = "Frequency (%)", fill = "Top Layer") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("burlywood4", "burlywood", "mediumpurple4",
+                               "coral4", "#D55E00", "#E69F00", "#009E73",
+                               "#CC79A7", "#0072B2", "cornsilk2", "darkgreen",
+                               "olivedrab3", "deepskyblue", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+NewTopLayerPlot
+
+ggsave("~/Desktop/ONAQ_Top_Layer_Plot.pdf", NewTopLayerPlot, width = 10, height = 6)
+
 
 ```
 
@@ -407,7 +504,7 @@ SoilTopLayerPlot
 
 # first, get counts, proportions, and percentages of each litter type per transect
 LitterTransect <- ONAQ_trimmed_data %>%
-  group_by(Litter, Transect) %>%
+  group_by(Litter_Plotting, Transect) %>%
   dplyr::summarize(totdepth_center = sum(Litter_depth_center),
                    totdepth_north = sum(Litter_depth_north),
                    totdepth_east = sum(Litter_depth_east),
@@ -418,13 +515,33 @@ LitterTransect <- ONAQ_trimmed_data %>%
   dplyr::mutate(proportion = n / sum(n)) %>%
   dplyr::mutate(percent = proportion*100)
 
+LitterTransect$Transect <- factor(LitterTransect$Transect, levels = elevation.order)
+LitterTransect$Litter_Plotting <- factor(LitterTransect$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
+
+NewTopLayer$Transect <- factor(NewTopLayer$Transect, levels = elevation.order)
+
 # make a bar plot
-LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litter)) +
+LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Transect", y = "Frequency (%)", fill = "Litter") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "#009E73", "burlywood4",
-                               "black", "orange", "#999999")) +
+   scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -442,6 +559,8 @@ LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litte
 
 LitterPlot
 
+ggsave("~/Desktop/ONAQ_Litter_Freq_Transect_Plot.pdf", LitterPlot, width = 10, height = 6)
+
 ```
 
 ### Litter_depth Plot
@@ -452,17 +571,22 @@ Make plot that shows litter type and cumulative depth across transects.
 
 # make a bar plot
 LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth_center,
-                                           fill = Litter)) +
+                                           fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Transect", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -479,6 +603,9 @@ LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth_center,
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 LitterDepthPlot
+
+ggsave("~/Desktop/ONAQ_Litter_Depth_Transects_Plot.pdf", LitterDepthPlot, width = 10, height = 6)
+
 
 ```
 
@@ -679,5 +806,343 @@ elev_depth <- ggplot(LitterTransect_all, aes(x = elev, y = totdepth)) +
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 elev_depth
+
+ggsave("~/Desktop/ONAQ_Litter_Depth_Transects_Elev_Corr.pdf", elev_depth, width = 10, height = 6)
+
+```
+
+```{r}
+
+# first, calculate the mean, median, and cumulative litter depths by litter type and top layer
+LitterStatsTop <- ONAQ_trimmed_data %>%
+  group_by(Litter_Plotting, Top_Plotting) %>%
+  dplyr::summarize(mean_depth = mean(Litter_depth_center),
+            median_depth = median(Litter_depth_center),
+            depth = sum(Litter_depth_center),
+            n = n(),
+            .groups = "drop")
+
+# calculate the number of observations of each top layer
+TopFreq <- ONAQ_trimmed_data %>%
+  group_by(Top_Plotting) %>%
+  dplyr::summarize(nTop = n(), .groups = "drop") 
+
+# merge the TopFreq data frame with the LitterStatsTop data frame
+LitterStatsTopFreq <- LitterStatsTop %>%
+  left_join(TopFreq, by = c("Top_Plotting"))
+
+# calculate the total number of observations
+total_top_counts <- sum(LitterStatsTopFreq$n)
+
+# calculate an adjusted cumulative litter depth by litter type and top layer
+# this is calculated using the following formula: adjusted cumulative litter depth = total litter depth * (1 - the proportion of observations)
+adjusted_depths_top <- LitterStatsTopFreq %>%
+  group_by(Litter_Plotting, Top_Plotting) %>%
+  dplyr::summarize(adjusted_depth_top = depth*(1-(n/total_top_counts)),
+                                               .groups = "drop")
+
+# calculate a weighted cumulative litter depth by litter type and top layer
+# this is calculated using the following formula: weighted cumulative litter depth = total litter depth * (the proportion of observations)
+weighted_depths_top <- LitterStatsTopFreq %>%
+  group_by(Litter_Plotting, Top_Plotting) %>%
+  dplyr::summarize(weighted_depth_top = depth*(n/total_top_counts), .groups = "drop")
+
+# calculate the maximum number of observtions per top layer
+top_freq_max <- max(LitterStatsTopFreq$nTop)
+
+# calculate the maximum litter depth per litter type and top layer
+depth_max_top <- max(LitterStatsTopFreq$depth)
+
+# calculate the maximum mean litter depth per litter type and top layer
+mean_depth_max_top <- max(LitterStatsTopFreq$mean_depth)
+
+# calculate the maximum sum of mean litter depths for a top layer category
+sum_mean_depth_max_top <- LitterStatsTopFreq %>%
+  group_by(Top_Plotting) %>%
+  summarize(sum_mean_depth = sum(mean_depth)) %>%
+  summarize(sum_mean_depth_max = max(sum_mean_depth)) %>%
+  pull(sum_mean_depth_max)
+
+# calculate the maximum sum of cumulative litter depths for a top layer category
+sum_depth_top <- LitterStatsTopFreq %>%
+  group_by(Top_Plotting) %>%
+  dplyr::summarize(sum_depth_top = sum(depth), .groups = "drop")
+sum_depth_max_top <- max(sum_depth_top$sum_depth_top)
+```
+
+```{r}
+
+LitterStatsTopFreq$Litter_Plotting <- factor(LitterStatsTopFreq$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
+
+# make a bar plot
+CumulLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_Plotting, y = depth,
+                                                    fill = Litter_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Top Layer", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  geom_point(aes(y = nTop*(depth_max_top/top_freq_max), fill = "n"), size = 3, pch = 21,
+             color = "black") +
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter", "Count")) +
+  scale_y_continuous(
+    name = "Cumulative Litter Depth (mm)",
+    limits = c(0, sum_depth_max_top),
+    sec.axis = sec_axis(~ . * (top_freq_max/depth_max_top), 
+                        name = "Number of Observations")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = c(.2,.7),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+CumulLitterTopPlot
+
+ggsave("~/Desktop/ONAQ_Top_Layer_Cumulative_Litter.pdf", CumulLitterTopPlot, width = 10, height = 6)
+
+```
+
+```{r}
+
+TopMicro <- ONAQ_trimmed_data %>%
+  group_by(Microsite, Top_Plotting) %>%
+  dplyr::summarize(count = n(), .groups = "drop")
+
+TopMicroPlot <- ggplot(TopMicro, aes(x = Microsite, y = count, fill = Top_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Microsite", y = "Number of Observations",
+       fill = "Top Layer") +
+  geom_point(size = 5, pch = 21, color = "black") +
+  scale_fill_manual(values = c("burlywood4", "#999999", "burlywood", "mediumpurple4",
+                               "coral4", "#D55E00", "#E69F00", "#009E73",
+                               "#CC79A7", "#0072B2", "cornsilk2", "darkgreen",
+                               "olivedrab3", "deepskyblue", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+TopMicroPlot 
+
+ggsave("~/Desktop/ONAQ_Top_Layer_v_Microsite.pdf", TopMicroPlot, width = 10, height = 6)
+```
+
+```{r}
+
+
+# first, calculate the mean, median, and total litter depths and the number of observations across litter types and microsites
+LitterStatsMicro <- ONAQ_trimmed_data %>%
+  group_by(Litter_Plotting, Microsite) %>%
+  dplyr::summarize(mean_depth = mean(Litter_depth_center),
+            median_depth = median(Litter_depth_center),
+            depth = sum(Litter_depth_center),
+            n = n(),
+            .groups = "drop")
+
+# next, calculate the total number of observations per microsite
+MicroFreq <- ONAQ_trimmed_data %>%
+  group_by(Microsite) %>%
+  dplyr::summarize(nMic = n(), .groups = "drop")
+
+# merge the MicroFreq data frame with the LitterStatsMicro data frame
+LitterStatsMicroFreq <- LitterStatsMicro %>%
+  left_join(MicroFreq, by = c("Microsite"))
+
+# calculate the total number of observations
+total_mic_counts <- sum(LitterStatsMicroFreq$n)
+
+# calculate an adjusted cumulative litter depth by litter type and microsite
+# this is calculated using the following formula: adjusted cumulative litter depth = total litter depth * (1 - the proportion of observations)
+adjusted_depths_mic <- LitterStatsMicro %>%
+  group_by(Litter_Plotting, Microsite) %>%
+  dplyr::summarize(adjusted_depth_mic = depth*(1-(n/total_mic_counts)),
+                                               .groups = "drop")
+
+# calculate a weighted cumulative litter depth by litter type and microsite
+# this is calculated using the following formula: weighted cumulative litter depth = total litter depth * (the proportion of observations)
+weighted_depths_mic <- LitterStatsMicro %>%
+  group_by(Litter_Plotting, Microsite) %>%
+  dplyr::summarize(weighted_depth_mic = depth*(n/total_mic_counts), .groups = "drop")
+
+# merge the adjusted_depths_mic data frame with the LitterStatsMicroFreq data frame 
+LitterStatsMicroFreq <- LitterStatsMicroFreq %>%
+  left_join(adjusted_depths_mic, by = c("Litter_Plotting", "Microsite"))
+
+# merge the weighted_depths_mic data frame with the LitterStatsMicroFreq data frame
+LitterStatsMicroFreq <- LitterStatsMicroFreq %>%
+  left_join(weighted_depths_mic, by = c("Litter_Plotting", "Microsite"))
+
+# calculate the maximum sum of adjusted cumulative litter depths for a microsite
+depth_max_mic <- LitterStatsMicroFreq %>%
+  group_by(Microsite) %>%
+  dplyr::summarize(tot_depth_mic = sum(depth)) %>%
+  dplyr::summarize(depth_max_mic = max(tot_depth_mic)) %>%
+  pull(depth_max_mic)
+
+# calculate the maximum sum of adjusted cumulative litter depths for a microsite
+adj_depth_max_mic <- LitterStatsMicroFreq %>%
+  group_by(Microsite) %>%
+  dplyr::summarize(tot_adj_depth_mic = sum(adjusted_depth_mic)) %>%
+  dplyr::summarize(adj_depth_max_mic = max(tot_adj_depth_mic)) %>%
+  pull(adj_depth_max_mic)
+
+# calculate the maximum sum of weighted cumulative litter depths for a microsite
+weight_depth_mic <- LitterStatsMicroFreq %>%
+  group_by(Microsite) %>%
+  dplyr::summarize(tot_weight_depth_mic = sum(weighted_depth_mic)) 
+weight_depth_max_mic <- max(weight_depth_mic$tot_weight_depth_mic)
+
+# calculate the maximum sum of mean litter depths for a top layer category
+sum_mean_depth_max_mic <- LitterStatsMicroFreq %>%
+  group_by(Microsite) %>%
+  summarize(sum_mean_depth = sum(mean_depth)) %>%
+  summarize(sum_mean_depth_max = max(sum_mean_depth)) %>%
+  pull(sum_mean_depth_max)
+
+# calculate the maximum total number of observations per microsite
+mic_freq_max <- max(LitterStatsMicroFreq$nMic)
+
+```
+
+```{r}
+
+LitterStatsMicroFreq$Litter_Plotting <- factor(LitterStatsMicroFreq$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
+
+# make a bar plot
+CumulDepthMicroFreqPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
+                                                           y = depth,
+                                                           fill = Litter_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Microsite", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  geom_point(aes(y = nMic*(depth_max_mic/mic_freq_max), fill = "n"), size = 3, pch = 21, color = "black") +
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter",
+                               "Count")) +
+  scale_y_continuous(
+    name = "Cumulative Litter Depth (mm)",
+    sec.axis = sec_axis(~ . * (mic_freq_max/depth_max_mic), 
+                        name = "Number of Observations")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = c(.8,.7),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+CumulDepthMicroFreqPlot
+
+ggsave("~/Desktop/ONAQ_Microsite_Cumulative_Litter.pdf", CumulDepthMicroFreqPlot, width = 10, height = 6)
+
+```
+
+```{r}
+
+
+# subset out just canopy and open microsites
+ONAQ_canopy_open <- subset(ONAQ_trimmed_data, Microsite %in% c("CANOPY", "OPEN"))
+
+
+ONAQ_nonwoody_only <- subset(ONAQ_canopy_open, Litter_Plotting %in% c("LT-H", "Nonwoody and Woody Litter"))
+
+LitterBoxPlot <- ggplot(ONAQ_nonwoody_only, aes(x = Microsite,
+                                                y = Litter_depth_center,
+                                       fill = Litter_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Mean Litter Depth (mm)", fill = "Litter Type") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25) +
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = c(.7,.7),
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  ggtitle(label = "ONAQ", subtitle = "November 2024") +
+  theme(plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12)) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+LitterBoxPlot
+
+ggsave("~/Desktop/ONAQ_Microsite_Mean_Nonwood_Litter.pdf", LitterBoxPlot, width = 10,
+       height = 6)
 
 ```

@@ -1,0 +1,234 @@
+---
+title: "Litterbag Site Selection"
+format: html
+editor: visual
+---
+
+```{r read_L2_data}
+
+library(dplyr)
+library(tidyr)
+
+SRER_L2_2024 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+SRER_L2_2024$Trip <- "F2024"
+JORN_L2_2024 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Fall_2024_Data.csv")
+MOAB_L2_2024 <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L2_Fall_2024_Data.csv")
+ONAQ_L2_2024 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+
+SRER_F2024 <- SRER_L2_2024 %>%
+  select("Transect", "Remarks", "Time", "Trip", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+JORN_F2024 <- JORN_L2_2024 %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+MOAB_F2024 <- MOAB_L2_2024 %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+ONAQ_F2024 <- ONAQ_L2_2024 %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+SRER_S2025 <- SRER_trimmed_data %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+SRER_S2025$Trip <- "S2025"
+
+JORN_S2025 <- JORN_L1_data %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+MOAB_S2025 <- MOAB_L1_data %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+ONAQ_S2025 <- ONAQ_L1_data %>%
+  select("Transect", "Remarks", "Time", "Top_layer", "Top_layer_other", "Top_height",
+         "Microsite", "Elevation")
+
+SRER <- rbind(SRER_F2024, SRER_S2025)
+JORN <- rbind(JORN_F2024, JORN_S2025)
+MOAB <- rbind(MOAB_F2024, MOAB_S2025)
+ONAQ <- rbind(ONAQ_F2024, ONAQ_S2025)
+
+```
+
+[**SRER**]{.underline}
+
+1.  PRVE (mid-elevation) canopy
+
+2.  ERLE (mid-elevation) canopy
+
+3.  PRVE/ERLE (mid-elevation) open
+
+4.  LATR (low-elevation) canopy
+
+5.  LATR (low-elevation) open
+
+6.  Wash (mid-elevation)
+
+```{r SRER}
+
+SRER_summary <- SRER %>%
+  filter(Top_layer == "L-PGRASS" | Top_layer_other == "PRVE" |
+           Top_layer_other == "LATR" | Top_layer == "NONE" | Microsite == "WASH") %>%
+  mutate(group = case_when(
+    Top_layer == "L-PGRASS" ~ "PGRASS",
+    Top_layer_other == "PRVE" ~ "PRVE",
+    Top_layer_other == "LATR" ~ "LATR",
+    Top_layer == "NONE" ~ "NONE",
+    Microsite == "WASH" ~ "WASH",
+    TRUE ~ NA_character_)) %>%
+  group_by(Transect, Trip, group) %>%
+  summarize(n = n(),
+    min_height_cm = min(Top_height, na.rm = TRUE),
+    max_height_cm = max(Top_height, na.rm = TRUE),
+    mean_height_cm = round(mean(Top_height, na.rm = TRUE), 0),
+    .groups = "drop") %>%
+  pivot_wider(names_from = group,
+    values_from = c(n, min_height_cm, max_height_cm, mean_height_cm),
+    names_glue = "{group}_{.value}") %>%
+  left_join(SRER %>%
+      group_by(Transect) %>%
+      summarize(mean_elev_m = round(mean(Elevation, na.rm = TRUE), 1), .groups = "drop"),
+      by = "Transect")
+
+write.csv(SRER_summary, "SRER_litterbag_locations_summary.csv")
+
+```
+
+[**JORN**]{.underline}
+
+1.  Perennial grass canopy
+
+2.  Perennial grass open
+
+3.  PRGL (hummock) canopy
+
+4.  PRGL (hummock) open
+
+5.  LATR (high-elevation) canopy
+
+6.  LATR (high-elevation) open
+
+```{r JORN}
+
+JORN_summary <- JORN %>%
+  filter(Top_layer_other == "PRGL" | Top_layer == "L-PGRASS" |
+           Top_layer == "D-PGRASS" |Top_layer == "NONE") %>%
+  mutate(group = case_when(
+    Top_layer_other == "PRGL" ~ "PRGL",
+    Top_layer == "L-PGRASS" ~ "PGRASS",
+    Top_layer == "D-PGRASS" ~ "PGRASS",
+    Top_layer == "NONE" ~ "NONE",
+    TRUE ~ NA_character_)) %>%
+  group_by(Transect, group) %>%
+  summarize(n = n(),
+    min_height_cm = min(Top_height, na.rm = TRUE),
+    max_height_cm = max(Top_height, na.rm = TRUE),
+    mean_height_cm = round(mean(Top_height, na.rm = TRUE), 0),
+    .groups = "drop") %>%
+  pivot_wider(names_from = group,
+    values_from = c(n, min_height_cm, max_height_cm, mean_height_cm),
+    names_glue = "{group}_{.value}") %>%
+  left_join(JORN %>%
+      group_by(Transect) %>%
+      summarize(mean_elev_m = round(mean(Elevation, na.rm = TRUE), 1),
+                .groups = "drop"),
+      by = "Transect")
+
+write.csv(JORN_summary, "JORN_litterbag_locations_summary.csv")
+
+```
+
+[**MOAB**]{.underline}
+
+1.  ARTR canopy
+
+2.  ARTR open
+
+3.  BOGR canopy
+
+4.  BOGR open
+
+5.  JUOS (high-elevation) canopy
+
+6.  JUOS (high-elevation) open
+
+```{r MOAB}
+
+MOAB_summary <- MOAB %>%
+  filter(Top_layer_other == "ARTR" | Top_layer_other == "BOGR" | 
+           Top_layer_other == "JUOS" | Top_layer == "NONE") %>%
+  mutate(group = case_when(
+    Top_layer_other == "ARTR" ~ "ARTR",
+    Top_layer_other == "BOGR" ~ "BOGR",
+    Top_layer_other == "JUOS" ~ "JUOS",
+    Top_layer == "NONE" ~ "NONE",
+    TRUE ~ NA_character_)) %>%
+  group_by(Transect, group) %>%
+  summarize(n = n(),
+    min_height_cm = min(Top_height, na.rm = TRUE),
+    max_height_cm = max(Top_height, na.rm = TRUE),
+    mean_height_cm = round(mean(Top_height, na.rm = TRUE), 0),
+    .groups = "drop") %>%
+  pivot_wider(names_from = group,
+    values_from = c(n, min_height_cm, max_height_cm, mean_height_cm),
+    names_glue = "{group}_{.value}") %>%
+  left_join(MOAB %>%
+      group_by(Transect) %>%
+      summarize(mean_elev_m = round(mean(Elevation, na.rm = TRUE), 1),
+                .groups = "drop"),
+      by = "Transect")
+
+write.csv(MOAB_summary, "MOAB_litterbag_locations_summary.csv")
+
+```
+
+[**ONAQ**]{.underline}
+
+1.  Perennial grass canopy
+
+2.  Perennial grass open
+
+3.  ARTR canopy
+
+4.  ARTR open
+
+5.  JUOS (high-elevation) canopy
+
+6.  JUOS (high-elevation) open
+
+```{r ONAQ}
+
+ONAQ_summary <- ONAQ %>%
+  filter(Top_layer_other == "ARTR" | Top_layer == "L-PGRASS" |
+           Top_layer == "D-PGRASS" | Top_layer_other == "JUOS" | Top_layer == "NONE") %>%
+  mutate(group = case_when(
+    Top_layer_other == "ARTR" ~ "ARTR",
+    Top_layer == "L-PGRASS" ~ "PGRASS",
+    Top_layer == "D-PGRASS" ~ "PGRASS",
+    Top_layer_other == "JUOS" ~ "JUOS",
+    Top_layer == "NONE" ~ "NONE",
+    TRUE ~ NA_character_)) %>%
+  group_by(Transect, group) %>%
+  summarize(n = n(),
+    min_height_cm = min(Top_height, na.rm = TRUE),
+    max_height_cm = max(Top_height, na.rm = TRUE),
+    mean_height_cm = round(mean(Top_height, na.rm = TRUE), 0),
+    .groups = "drop") %>%
+  pivot_wider(names_from = group,
+    values_from = c(n, min_height_cm, max_height_cm, mean_height_cm),
+    names_glue = "{group}_{.value}") %>%
+  left_join(ONAQ %>%
+      group_by(Transect) %>%
+      summarize(mean_elev_m = round(mean(Elevation, na.rm = TRUE), 1),
+                .groups = "drop"),
+      by = "Transect")
+
+write.csv(ONAQ_summary, "ONAQ_litterbag_locations_summary.csv")
+
+```

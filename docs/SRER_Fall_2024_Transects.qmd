@@ -25,6 +25,7 @@ library(plyr)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(ggpmisc)
 
 ```
 
@@ -34,28 +35,28 @@ There are 24 csv files each containing data for one transect.
 
 ```{r import_data}
 
-### LEVEL 0 DATA ###
-# specify folder containing trasect data (individual csv files are considered Level 0 data)
-SRER_data_files <- dir("~/Downloads/SRER_Sept2024_transect_csv_files")
-
-# set working directory
-setwd("~/Downloads/SRER_Sept2024_transect_csv_files")
-
-### LEVEL 1 DATA ###
-### SRER_all_data ###
-
-# read in csv files and create a new column for transect id
-SRER_all_data <- read_csv(SRER_data_files, id = "Transect") %>%
-   mutate(Transect = str_remove_all(Transect, ".csv"))
-
-# write a csv file of the compiled (Level 1) data
-write.csv(SRER_all_data, "~/Desktop/SRER_LPI_L1_Fall_2024_Data.csv")
-
-# create a data frame for duplicate points 
-SRER_duplicate_points <- SRER_all_data %>%
-  group_by(Transect, Remarks) %>%
-  filter(n() > 1) %>%
-  ungroup() 
+# ### LEVEL 0 DATA ###
+# # specify folder containing trasect data (individual csv files are considered Level 0 data)
+# SRER_data_files <- dir("~/Downloads/SRER_Sept2024_transect_csv_files")
+# 
+# # set working directory
+# setwd("~/Downloads/SRER_Sept2024_transect_csv_files")
+# 
+# ### LEVEL 1 DATA ###
+# ### SRER_all_data ###
+# 
+# # read in csv files and create a new column for transect id
+# SRER_all_data <- read_csv(SRER_data_files, id = "Transect") %>%
+#    mutate(Transect = str_remove_all(Transect, ".csv"))
+# 
+# # write a csv file of the compiled (Level 1) data
+# write.csv(SRER_all_data, "~/Desktop/SRER_LPI_L1_Fall_2024_Data.csv")
+# 
+# # create a data frame for duplicate points 
+# SRER_duplicate_points <- SRER_all_data %>%
+#   group_by(Transect, Remarks) %>%
+#   filter(n() > 1) %>%
+#   ungroup() 
 
 ```
 
@@ -75,55 +76,55 @@ Investigate duplicate rows.
 
 ```{r merge_duplicates}
 
-### LEVEL 2 DATA ###
-### SRER_trimmed_data ###
-
-# SRER006 (75): 2 rows with "75 m" for Remarks column ("21" and "22" in ID column). All the attributes for one of these rows (ID "21") are empty - this one will be removed from the data frame.
-SRER_trimmed_data <- SRER_all_data[!(SRER_all_data$Transect=="SRER006" & SRER_all_data$ID == "21"),]
-
-# SRER006 (48): 3 rows with "48 m" for Remarks column ("49", "50", "52" in ID column). All the attributes for one of these rows (ID "50") are empty - this one will be removed from the data frame. ID "52" contains the file name for a photograph ("20240921162905.jpg") - this file name will be copied and pasted into the Photo column for ID "49" and the ID "50" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "50"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "52"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "49", "Photo"] <- "20240921162905.jpg"
-
-# SRER006 (46): 2 rows with "46 m" for Remarks column ("54" and "57" in ID column). ID "57" contains the file name for a photograph ("20240921163408.jpg") - this file name will be copied and pasted into the Photo column for ID "54" and the ID "57" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "57"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "54", "Photo"] <- "20240921163408.jpg"
-
-# SRER006 (12): 2 rows with "12 m" for Remarks column ("95" and "96" in ID column). All the attributes for one of these rows (ID "96") are empty - this one will be removed from the data frame.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "96"),]
-
-# SRER007 (12): 2 rows with "12" for Remarks column ("40" and "41" in ID column). All the attributes for one of these rows (ID "41") are empty - this one will be removed from the data frame.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER007" & SRER_trimmed_data$ID == "41"),]
-
-# SRER014: 2 rows with "22" for Remarks column ("83" and "84" in ID column). ID "83" contains an "N" for Top_layer but all other attributes are empty. ID "84" is missing a value for Top_layer, so "N" will be copied and pasted there. ID "83" row will be removed from the data frame.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER014" & SRER_trimmed_data$ID == "83"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER014" & SRER_trimmed_data$ID == "84", "Top_layer"] <- "N"
-
-# SRER020: 3 rows with "N facing slope (less dense vegetation)" for Remarks column ("55", "56", "58" in ID column). All the attributes for ID "55" and "56" rows are empty. ID "58" row contains a file name ("20240925221036.jpg") in the Photo column. All of these will be deleted from the data frame, as this was a post hoc photograph of half the transect rather than a point along the transect.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "55"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "56"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "58"),]
-
-# SRER025 (38): 2 rows with "38" for Remarks column ("14" and "17" in ID column). ID "17" contains the file name for a photograph ("20240924143857.jpg") - this file name will be copied and pasted into the Photo column for ID "14" and the ID "17" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "17"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "14", "Photo"] <- "20240924143857.jpg"
-
-# SRER025 (21): 3 rows with "21" for Remarks column ("36", "37", "39" in ID column). All the attributes for the ID "37" row are empty - this row will be deleted. ID "39" contains the file name for a photograph ("20240924145310.jpg") - this file name will be copied and pasted into the Photo column for ID "36" and the ID "39" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "37"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "39"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "36", "Photo"] <- "20240924145310.jpg"
-
-# SRER027 (13): 2 rows containing "13 m" for Remarks column ("79" and "80" in ID column). All the attributes for the ID "80" row are empty - this row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "80"),]
-
-# SRER031 (2): 2 rows with "2" for Remarks column ("55" and "57" in ID column). ID "57" contains the file name for a photograph ("20240925161056.jpg") - this file name will be copied and pasted into the Photo column for ID "55" and the ID "57" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER031" & SRER_trimmed_data$ID == "57"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER031" & SRER_trimmed_data$ID == "55", "Photo"] <- "20240925161056.jpg"
-
-# SRER043: 3 rows with "30" for Remarks column ("22", "23", "24" in ID column). All the attributes for the ID "23" and "24" rows are empty - these rows will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER043" & SRER_trimmed_data$ID == "23"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER043" & SRER_trimmed_data$ID == "24"),]
+# ### LEVEL 2 DATA ###
+# ### SRER_trimmed_data ###
+# 
+# # SRER006 (75): 2 rows with "75 m" for Remarks column ("21" and "22" in ID column). All the attributes for one of these rows (ID "21") are empty - this one will be removed from the data frame.
+# SRER_trimmed_data <- SRER_all_data[!(SRER_all_data$Transect=="SRER006" & SRER_all_data$ID == "21"),]
+# 
+# # SRER006 (48): 3 rows with "48 m" for Remarks column ("49", "50", "52" in ID column). All the attributes for one of these rows (ID "50") are empty - this one will be removed from the data frame. ID "52" contains the file name for a photograph ("20240921162905.jpg") - this file name will be copied and pasted into the Photo column for ID "49" and the ID "50" row will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "50"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "52"),]
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "49", "Photo"] <- "20240921162905.jpg"
+# 
+# # SRER006 (46): 2 rows with "46 m" for Remarks column ("54" and "57" in ID column). ID "57" contains the file name for a photograph ("20240921163408.jpg") - this file name will be copied and pasted into the Photo column for ID "54" and the ID "57" row will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "57"),]
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "54", "Photo"] <- "20240921163408.jpg"
+# 
+# # SRER006 (12): 2 rows with "12 m" for Remarks column ("95" and "96" in ID column). All the attributes for one of these rows (ID "96") are empty - this one will be removed from the data frame.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "96"),]
+# 
+# # SRER007 (12): 2 rows with "12" for Remarks column ("40" and "41" in ID column). All the attributes for one of these rows (ID "41") are empty - this one will be removed from the data frame.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER007" & SRER_trimmed_data$ID == "41"),]
+# 
+# # SRER014: 2 rows with "22" for Remarks column ("83" and "84" in ID column). ID "83" contains an "N" for Top_layer but all other attributes are empty. ID "84" is missing a value for Top_layer, so "N" will be copied and pasted there. ID "83" row will be removed from the data frame.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER014" & SRER_trimmed_data$ID == "83"),]
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER014" & SRER_trimmed_data$ID == "84", "Top_layer"] <- "N"
+# 
+# # SRER020: 3 rows with "N facing slope (less dense vegetation)" for Remarks column ("55", "56", "58" in ID column). All the attributes for ID "55" and "56" rows are empty. ID "58" row contains a file name ("20240925221036.jpg") in the Photo column. All of these will be deleted from the data frame, as this was a post hoc photograph of half the transect rather than a point along the transect.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "55"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "56"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "58"),]
+# 
+# # SRER025 (38): 2 rows with "38" for Remarks column ("14" and "17" in ID column). ID "17" contains the file name for a photograph ("20240924143857.jpg") - this file name will be copied and pasted into the Photo column for ID "14" and the ID "17" row will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "17"),]
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "14", "Photo"] <- "20240924143857.jpg"
+# 
+# # SRER025 (21): 3 rows with "21" for Remarks column ("36", "37", "39" in ID column). All the attributes for the ID "37" row are empty - this row will be deleted. ID "39" contains the file name for a photograph ("20240924145310.jpg") - this file name will be copied and pasted into the Photo column for ID "36" and the ID "39" row will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "37"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "39"),]
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "36", "Photo"] <- "20240924145310.jpg"
+# 
+# # SRER027 (13): 2 rows containing "13 m" for Remarks column ("79" and "80" in ID column). All the attributes for the ID "80" row are empty - this row will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "80"),]
+# 
+# # SRER031 (2): 2 rows with "2" for Remarks column ("55" and "57" in ID column). ID "57" contains the file name for a photograph ("20240925161056.jpg") - this file name will be copied and pasted into the Photo column for ID "55" and the ID "57" row will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER031" & SRER_trimmed_data$ID == "57"),]
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER031" & SRER_trimmed_data$ID == "55", "Photo"] <- "20240925161056.jpg"
+# 
+# # SRER043: 3 rows with "30" for Remarks column ("22", "23", "24" in ID column). All the attributes for the ID "23" and "24" rows are empty - these rows will be deleted.
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER043" & SRER_trimmed_data$ID == "23"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER043" & SRER_trimmed_data$ID == "24"),]
 
 ```
 
@@ -131,8 +132,8 @@ Look at unique Remarks.
 
 ```{r view_Remarks}
 
-Remarks <- unique(SRER_trimmed_data$Remarks)
-print(Remarks)
+# Remarks <- unique(SRER_trimmed_data$Remarks)
+# print(Remarks)
 
 ```
 
@@ -142,22 +143,22 @@ Remarks to remove: "lots of cow activity", "lots of cattle activity in the area,
 
 ```{r remove_notes}
 
-# delete rows that contain notes rather than data
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="lots of cow activity"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="lots of cattle activity in the area, stomped grass and cow pies, lots of PRVE larger than usual, photos for measuriments and ids included"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="revine, dense shrub S slope, new vegetation less dense N slope (photo facing S)"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="new cactus, AHILL= ant hill as a microsite, EPIP=epiphyte,"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="note: interesting dung, antsloved it"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="note; all L-UNKNOWN IDs are most likely mesquite or acacia, photos included"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="more cows, lots of big prve, ants at 30-50m"),]
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="TCAST=termite activity/mounds/tunnels"),]
+# # delete rows that contain notes rather than data
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="lots of cow activity"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="lots of cattle activity in the area, stomped grass and cow pies, lots of PRVE larger than usual, photos for measuriments and ids included"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="revine, dense shrub S slope, new vegetation less dense N slope (photo facing S)"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="new cactus, AHILL= ant hill as a microsite, EPIP=epiphyte,"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="note: interesting dung, antsloved it"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="note; all L-UNKNOWN IDs are most likely mesquite or acacia, photos included"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="more cows, lots of big prve, ants at 30-50m"),]
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="TCAST=termite activity/mounds/tunnels"),]
 
 ```
 
@@ -165,8 +166,8 @@ Shorten the six 90 m transects (SRER006, SRER012, SRER023, SRER026, SRER027, SRE
 
 ```{r cut_90m}
 
-# filter out and delete points 51-90 for the six 90 m transects
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks >= 51),]
+# # filter out and delete points 51-90 for the six 90 m transects
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks >= 51),]
 
 ```
 
@@ -176,64 +177,64 @@ Investigate "NA" for Top_layer. And look at unique values for Top_layer_other to
 
 ```{r clean_Top_layer}
 
-# create a data frame for rows with an "NA" for Top_layer
-NA_Top_layer_tab <- subset(SRER_trimmed_data, is.na(Top_layer))
-
-# there are 24 rows that have an "NA" for Top_layer
-
-# get a count of rows that also have an "NA" for Transect
-sum(is.na(NA_Top_layer_tab$Transect))
-
-# delete the 16 rows that also have an "NA" in the Transect column
-NA_Top_layer_tab <- NA_Top_layer_tab[!is.na(NA_Top_layer_tab$Transect),]
-SRER_trimmed_data <- SRER_trimmed_data[!is.na(SRER_trimmed_data$Transect),]
-
-# 8 rows with "NA" for Top_layer remain - let's investigate Lower_1
-unique(NA_Top_layer_tab$Lower_1)
-
-# SRER027 (26): Lower_1 = "L-OTHER"; Lower_1_other = "CAER"; Lower_2 = "D-PGRASS"; Top_height = "65" - which seems reasonable for CAER, so let's go ahead and assume the top layer should be CAER
-# Delete "L-OTHER" from Lower_1 and paste it into Top_layer instead; delete "CAER" from Lower_1_other and paste it into Top_layer_other instead; delete "D-PGRASS" from Lower_2 and paste it into Lower_1 instead
-# ID = 67
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Top_layer"] <- "L-OTHER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1_other"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Top_layer_other"] <- "CAER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_2"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1"] <- "D-PGRASS"
-
-# let's go ahead and assume the remaining 7 rows should have an "N" for Top_layer
-SRER_trimmed_data$Top_layer[is.na(SRER_trimmed_data$Top_layer)] <- "N"
-
-# rename "N" to "None"
-SRER_trimmed_data$Top_layer[SRER_trimmed_data$Top_layer=="N"] <- "NONE"
-
-# look at unique values for Top_layer_other
-Top_layer_other <- unique(SRER_trimmed_data$Top_layer_other)
-print(Top_layer_other)
-
-# fix typos
-
-# "Y" appears once for transect SRER030 ("2" Remarks) - not sure what this is, so we have to delete this row
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER030" & SRER_trimmed_data$Remarks == "2"),]
-
-# "mesquite" appears once for transect SRER006 - this must be PRVE
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="mesquite"] <- "PRVE"
-
-# "PRVEA" appears once for transect SRER006 - this should just be PRVE
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PRVEA"] <- "PRVE"
-
-# "PVRE" appears once for transect SRER006 - this should just be PRVE
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PVRE"] <- "PRVE"
-
-# "CUPA" appears once for transect SRER012 - this should be CEPA
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="CUPA"] <- "CEPA"
-
-# "u" appears once for transect SRER018 but the Top_layer is listed as "L-PGRASS" so this must be a typo and can be converted to an "NA"
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="u"] <- NA
-
-# look at unique values for Top_layer_other
-Top_layer_other_cleaned <- unique(SRER_trimmed_data$Top_layer_other)
-print(Top_layer_other_cleaned)
+# # create a data frame for rows with an "NA" for Top_layer
+# NA_Top_layer_tab <- subset(SRER_trimmed_data, is.na(Top_layer))
+# 
+# # there are 24 rows that have an "NA" for Top_layer
+# 
+# # get a count of rows that also have an "NA" for Transect
+# sum(is.na(NA_Top_layer_tab$Transect))
+# 
+# # delete the 16 rows that also have an "NA" in the Transect column
+# NA_Top_layer_tab <- NA_Top_layer_tab[!is.na(NA_Top_layer_tab$Transect),]
+# SRER_trimmed_data <- SRER_trimmed_data[!is.na(SRER_trimmed_data$Transect),]
+# 
+# # 8 rows with "NA" for Top_layer remain - let's investigate Lower_1
+# unique(NA_Top_layer_tab$Lower_1)
+# 
+# # SRER027 (26): Lower_1 = "L-OTHER"; Lower_1_other = "CAER"; Lower_2 = "D-PGRASS"; Top_height = "65" - which seems reasonable for CAER, so let's go ahead and assume the top layer should be CAER
+# # Delete "L-OTHER" from Lower_1 and paste it into Top_layer instead; delete "CAER" from Lower_1_other and paste it into Top_layer_other instead; delete "D-PGRASS" from Lower_2 and paste it into Lower_1 instead
+# # ID = 67
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1"] <- NA
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Top_layer"] <- "L-OTHER"
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1_other"] <- NA
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Top_layer_other"] <- "CAER"
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_2"] <- NA
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1"] <- "D-PGRASS"
+# 
+# # let's go ahead and assume the remaining 7 rows should have an "N" for Top_layer
+# SRER_trimmed_data$Top_layer[is.na(SRER_trimmed_data$Top_layer)] <- "N"
+# 
+# # rename "N" to "None"
+# SRER_trimmed_data$Top_layer[SRER_trimmed_data$Top_layer=="N"] <- "NONE"
+# 
+# # look at unique values for Top_layer_other
+# Top_layer_other <- unique(SRER_trimmed_data$Top_layer_other)
+# print(Top_layer_other)
+# 
+# # fix typos
+# 
+# # "Y" appears once for transect SRER030 ("2" Remarks) - not sure what this is, so we have to delete this row
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER030" & SRER_trimmed_data$Remarks == "2"),]
+# 
+# # "mesquite" appears once for transect SRER006 - this must be PRVE
+# SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="mesquite"] <- "PRVE"
+# 
+# # "PRVEA" appears once for transect SRER006 - this should just be PRVE
+# SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PRVEA"] <- "PRVE"
+# 
+# # "PVRE" appears once for transect SRER006 - this should just be PRVE
+# SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PVRE"] <- "PRVE"
+# 
+# # "CUPA" appears once for transect SRER012 - this should be CEPA
+# SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="CUPA"] <- "CEPA"
+# 
+# # "u" appears once for transect SRER018 but the Top_layer is listed as "L-PGRASS" so this must be a typo and can be converted to an "NA"
+# SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="u"] <- NA
+# 
+# # look at unique values for Top_layer_other
+# Top_layer_other_cleaned <- unique(SRER_trimmed_data$Top_layer_other)
+# print(Top_layer_other_cleaned)
 
 ```
 
@@ -241,45 +242,45 @@ Investigate "NA" for Soil_surface. And look at unique values for Soil_surface_ot
 
 ```{r clean_Soil_surface}
 
-# create a data frame for rows with an "NA" for Soil_surface
-NA_Soil_surface_tab <- subset(SRER_trimmed_data, is.na(Soil_surface))
-
-# there are 122 rows that have an "NA" for Soil_surface (many are from day one transects [SRER006, SRER027, and SRER028] when we did not know the default parameters did not automatically export)
-# Let's investigate Soil_surface_other before doing anything about the "NA" values
-unique(NA_Soil_surface_tab$Soil_surface_other)
-
-# SRER025 (43): Litter = "OTHER" but Litter_other is empty and Soil_surface_other = "H_W"
-# delete "H_W" from Soil_surface_other and paste it into Litter_other instead
-# ID = 8
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "8", "Soil_surface_other"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "8", "Litter_other"] <- "H_W"
-
-# default Soil_surface value was "SOIL" - let's go ahead and assume any "NA" values in this column should be "SOIL"
-# if Soil_surface is "NA" paste "SOIL"
-SRER_trimmed_data$Soil_surface[is.na(SRER_trimmed_data$Soil_surface)] <- "SOIL"
-
-# rename "CRST" to "CRUST"
-SRER_trimmed_data$Soil_surface[SRER_trimmed_data$Soil_surface=="CRST"] <- "CRUST"
-
-# look at unique values for Soil_surface_other
-Soil_surface_other <- unique(SRER_trimmed_data$Soil_surface_other)
-print(Soil_surface_other)
-
-# fix typos
-
-# "LPGRASS" should be "L-PGRASS"
-SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other=="LPGRASS"] <- "L-PGRASS"
-
-# "DPGRASS" should be "D-PGRASS"
-SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other=="DPGRASS"] <- "D-PGRASS"
-
-# SRER028 (47): Litter = "LT-H" and Soil_surface_other = "SOIL_DUNG" but "DUNG" is considered litter
-# replace "LT-H" with "OTHER" for Litter; replace "NA" for Litter_other with "H_DUNG"; replace "OTHER" with "SOIL" for Soil_surface; replace "SOIL_DUNG" with "NA" for Soil_surface_other
-# ID = 52
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Litter"] <- "OTHER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Litter_other"] <- "H_DUNG"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Soil_surface"] <- "SOIL"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Soil_surface_other"] <- NA
+# # create a data frame for rows with an "NA" for Soil_surface
+# NA_Soil_surface_tab <- subset(SRER_trimmed_data, is.na(Soil_surface))
+# 
+# # there are 122 rows that have an "NA" for Soil_surface (many are from day one transects [SRER006, SRER027, and SRER028] when we did not know the default parameters did not automatically export)
+# # Let's investigate Soil_surface_other before doing anything about the "NA" values
+# unique(NA_Soil_surface_tab$Soil_surface_other)
+# 
+# # SRER025 (43): Litter = "OTHER" but Litter_other is empty and Soil_surface_other = "H_W"
+# # delete "H_W" from Soil_surface_other and paste it into Litter_other instead
+# # ID = 8
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "8", "Soil_surface_other"] <- NA
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "8", "Litter_other"] <- "H_W"
+# 
+# # default Soil_surface value was "SOIL" - let's go ahead and assume any "NA" values in this column should be "SOIL"
+# # if Soil_surface is "NA" paste "SOIL"
+# SRER_trimmed_data$Soil_surface[is.na(SRER_trimmed_data$Soil_surface)] <- "SOIL"
+# 
+# # rename "CRST" to "CRUST"
+# SRER_trimmed_data$Soil_surface[SRER_trimmed_data$Soil_surface=="CRST"] <- "CRUST"
+# 
+# # look at unique values for Soil_surface_other
+# Soil_surface_other <- unique(SRER_trimmed_data$Soil_surface_other)
+# print(Soil_surface_other)
+# 
+# # fix typos
+# 
+# # "LPGRASS" should be "L-PGRASS"
+# SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other=="LPGRASS"] <- "L-PGRASS"
+# 
+# # "DPGRASS" should be "D-PGRASS"
+# SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other=="DPGRASS"] <- "D-PGRASS"
+# 
+# # SRER028 (47): Litter = "LT-H" and Soil_surface_other = "SOIL_DUNG" but "DUNG" is considered litter
+# # replace "LT-H" with "OTHER" for Litter; replace "NA" for Litter_other with "H_DUNG"; replace "OTHER" with "SOIL" for Soil_surface; replace "SOIL_DUNG" with "NA" for Soil_surface_other
+# # ID = 52
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Litter"] <- "OTHER"
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Litter_other"] <- "H_DUNG"
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Soil_surface"] <- "SOIL"
+# SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Soil_surface_other"] <- NA
 
 ```
 
@@ -287,41 +288,41 @@ Investigate "NA" for Litter. And look at unique values for Litter_other to check
 
 ```{r clean_Litter}
 
-# create a data frame for rows with an "NA" for Litter
-NA_Litter_tab <- subset(SRER_trimmed_data, is.na(Litter))
-sum(is.na(NA_Litter_tab$Transect))
-
-# there are 65 rows that have an "NA" for Litter
-# all of these rows also have "NA" in the Litter_other column - let's go ahead and assume any "NA" values in this column should be "NONE"
-
-# if Litter is "NA" paste "NONE"
-SRER_trimmed_data$Litter[is.na(SRER_trimmed_data$Litter)] <- "NONE"
-
-# rename "N" to "NONE"
-SRER_trimmed_data$Litter[SRER_trimmed_data$Litter=="N"] <- "NONE"
-
-# create a new data frame for rows that have "NONE" for Litter but still have a litter depth measurement
-litter_none_df <- SRER_trimmed_data %>%
-  filter(Litter == "NONE" & Litter_depth > 0)
-
-# these rows have to be deleted because we do not have any information on the type of litter present
-unique(litter_none_df$Remarks)
-unique(litter_none_df$ID)
-
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="20" & SRER_trimmed_data$Remarks == "31"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="26" & SRER_trimmed_data$Remarks == "26"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="28" & SRER_trimmed_data$Remarks == "24"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="37" & SRER_trimmed_data$Remarks == "16"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="86" & SRER_trimmed_data$Remarks == "11"),]
-
-# if Litter_depth is "NA" paste "0"
-SRER_trimmed_data$Litter_depth[is.na(SRER_trimmed_data$Litter_depth)] <- 0
-
-# make sure Litter_depth values are numeric
-SRER_trimmed_data$Litter_depth <- as.numeric(SRER_trimmed_data$Litter_depth)
-
-# ANNOTATE - Litter "OTHER" but nothing written in the Litter_other column
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER017" & SRER_trimmed_data$ID == "50"),]
+# # create a data frame for rows with an "NA" for Litter
+# NA_Litter_tab <- subset(SRER_trimmed_data, is.na(Litter))
+# sum(is.na(NA_Litter_tab$Transect))
+# 
+# # there are 65 rows that have an "NA" for Litter
+# # all of these rows also have "NA" in the Litter_other column - let's go ahead and assume any "NA" values in this column should be "NONE"
+# 
+# # if Litter is "NA" paste "NONE"
+# SRER_trimmed_data$Litter[is.na(SRER_trimmed_data$Litter)] <- "NONE"
+# 
+# # rename "N" to "NONE"
+# SRER_trimmed_data$Litter[SRER_trimmed_data$Litter=="N"] <- "NONE"
+# 
+# # create a new data frame for rows that have "NONE" for Litter but still have a litter depth measurement
+# litter_none_df <- SRER_trimmed_data %>%
+#   filter(Litter == "NONE" & Litter_depth > 0)
+# 
+# # these rows have to be deleted because we do not have any information on the type of litter present
+# unique(litter_none_df$Remarks)
+# unique(litter_none_df$ID)
+# 
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="20" & SRER_trimmed_data$Remarks == "31"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="26" & SRER_trimmed_data$Remarks == "26"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="28" & SRER_trimmed_data$Remarks == "24"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="37" & SRER_trimmed_data$Remarks == "16"),]
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$ID=="86" & SRER_trimmed_data$Remarks == "11"),]
+# 
+# # if Litter_depth is "NA" paste "0"
+# SRER_trimmed_data$Litter_depth[is.na(SRER_trimmed_data$Litter_depth)] <- 0
+# 
+# # make sure Litter_depth values are numeric
+# SRER_trimmed_data$Litter_depth <- as.numeric(SRER_trimmed_data$Litter_depth)
+# 
+# # ANNOTATE - Litter "OTHER" but nothing written in the Litter_other column
+# SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER017" & SRER_trimmed_data$ID == "50"),]
 
 
 ```
@@ -330,26 +331,59 @@ Investigate "NA" for Microsite.
 
 ```{r clean_Microsite}
 
-# create a data frame for rows with an "NA" for Microsite
-NA_Microsite_tab <- subset(SRER_trimmed_data, is.na(Microsite))
-
-# there are 106 rows that have an "NA" for Microsite
-# let's investigate Microsite_other before doing anything about the "NA" values
-unique(NA_Microsite_tab$Microsite_other)
-
-# all of these rows also have "NA" in the Microsite_other column - let's go ahead and assume any "NA" values in this column should be "OPEN"
-# if Microsite is "NA" paste "OPEN"
-SRER_trimmed_data$Microsite[is.na(SRER_trimmed_data$Microsite)] <- "OPEN"
+# # create a data frame for rows with an "NA" for Microsite
+# NA_Microsite_tab <- subset(SRER_trimmed_data, is.na(Microsite))
+# 
+# # there are 106 rows that have an "NA" for Microsite
+# # let's investigate Microsite_other before doing anything about the "NA" values
+# unique(NA_Microsite_tab$Microsite_other)
+# 
+# # all of these rows also have "NA" in the Microsite_other column - let's go ahead and assume any "NA" values in this column should be "OPEN"
+# # if Microsite is "NA" paste "OPEN"
+# SRER_trimmed_data$Microsite[is.na(SRER_trimmed_data$Microsite)] <- "OPEN"
 
 ```
 
 ```{r clean_Top_height}
 
-# if Top_height is "NA" paste "0"
-SRER_trimmed_data$Top_height[is.na(SRER_trimmed_data$Top_height)] <- 0
+# # if Top_height is "NA" paste "0"
+# SRER_trimmed_data$Top_height[is.na(SRER_trimmed_data$Top_height)] <- 0
+# 
+# # make sure Top_height values are numeric
+# SRER_trimmed_data$Top_height <- as.numeric(SRER_trimmed_data$Top_height)
 
-# make sure Top_height values are numeric
-SRER_trimmed_data$Top_height <- as.numeric(SRER_trimmed_data$Top_height)
+```
+
+```{r}
+
+# SRER_trimmed_data$dummy <- 1
+# 
+# # Convert to spatial object
+# coordinates(SRER_trimmed_data) <- ~Remarks + dummy
+# 
+# # Compute semivariogram
+# vg.attempt <- variogram(Litter_depth ~ 1, data = SRER_trimmed_data, cutoff = 50, width = 1)
+# 
+# # Plot the semivariogram
+# plot(vg.attempt, main = "Empirical Semivariogram of SRER Litter Depths")
+# 
+# 
+# 
+# # Set up plot area
+# plot(1, type = "n", xlim = c(0, 51), ylim = c(0, 0.2),
+#      xlab = "Lag (h)", ylab = "Semivariance γ(h)",
+#      main = "ManySemivariograms on Same Plot")
+# 
+# # Loop through each depth profile
+# for (i in 1:24) {
+#   df <- data.frame(x = 1:1192, y = 1, Litter_depth = SRER_trimmed_data[[i]])
+#   coordinates(SRER_trimmed_data) <- ~Remarks + dummy
+#   
+#   vg <- variogram(Litter_depth ~ 1, data = SRER_trimmed_data, cutoff = 51, width = 1)
+#   
+#   # Add to existing plot
+#   lines(vg$dist, vg$gamma, col = rgb(0, 0, 1, 0.3))  # semi-transparent blue
+# }
 
 ```
 
@@ -360,6 +394,8 @@ SRER_trimmed_data$Top_height <- as.numeric(SRER_trimmed_data$Top_height)
 ### Top_layer Plot
 
 ```{r Top_layer_transects}
+
+SRER_trimmed_data <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
 
 # first get counts, proportions, and percentages of each top layer type per transect
 TopLayer <- SRER_trimmed_data %>%
@@ -406,7 +442,7 @@ TopLayerPlot
 
 # first, get counts, proportions, and percentages of each Top_layer_other category per transect
 TopLayerOther <- SRER_trimmed_data %>%
-  group_by(Top_layer) %>%
+  group_by(Top_layer_other, Transect) %>%
   dplyr::summarize(count = n(), .groups = "drop") %>%
   group_by(Transect) %>%
   dplyr::mutate(proportion = count / sum(count)) %>%
@@ -650,6 +686,23 @@ for (i in 1:nrow(SRER_trimmed_data)) {
 
 ```
 
+```{r}
+
+# calculate mean elevation per site
+MeanElev <- SRER_trimmed_data %>%
+  group_by(Transect) %>%
+  dplyr::summarize(Mean.Elevation = mean(Elevation))
+
+MeanElev <- MeanElev[order(MeanElev$Mean.Elevation), ]
+
+MeanElev$Mean.Elevation <- factor(MeanElev$Mean.Elevation, levels = unique(MeanElev$Mean.Elevation))
+
+elevation.order <- as.list(MeanElev$Transect)
+
+print(elevation.order)
+
+```
+
 ### Life-form Plot
 
 Remake plot of top layer frequencies across transects.
@@ -664,15 +717,17 @@ NewTopLayer <- SRER_trimmed_data %>%
   dplyr::mutate(proportion = count / sum(count)) %>%
   dplyr::mutate(percent = proportion*100)
 
+NewTopLayer$Transect <- factor(NewTopLayer$Transect, levels = elevation.order)
+
 # make a bar plot
 NewTopLayerPlot <- ggplot(NewTopLayer, aes(x = Transect, y = percent, fill = Top_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
-  labs(x = "Transect", y = "Frequency (%)", fill = "Top Layer") +
+  labs(x = "Transect (Low to High Elevation)", y = "Frequency (%)", fill = "Top Layer") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   scale_fill_manual(values = c("burlywood4", "#999999", "burlywood", "mediumpurple4",
                                "coral4", "#D55E00", "#E69F00", "#009E73",
                                "#CC79A7", "#0072B2", "cornsilk2", "darkgreen",
-                               "olivedrab3", "#000000")) +
+                               "olivedrab3", "deepskyblue", "#000000")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -811,6 +866,34 @@ for (i in 1:nrow(SRER_trimmed_data)) {
     {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
 }
 
+# if Litter_other is "H_C" paste "Nonwoody and Cactus Litter"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
+      SRER_trimmed_data$Litter_other[i] == "H_C")
+    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Cactus Litter"}
+}
+
+# if Litter_other is "H_W_C" paste "Nonwoody, Woody, and Cactus Litter"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
+      SRER_trimmed_data$Litter_other[i] == "H_W_C")
+    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody, Woody, and Cactus Litter"}
+}
+
+# if Litter_other is "H_DUNG" paste "Other Mixed Litter"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
+      SRER_trimmed_data$Litter_other[i] == "H_DUNG")
+    {SRER_trimmed_data$Litter_Plotting[i] <- "Other Mixed Litter"}
+}
+
+# if Litter_other is "W_C" paste "Other Mixed Litter"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
+      SRER_trimmed_data$Litter_other[i] == "W_C")
+    {SRER_trimmed_data$Litter_Plotting[i] <- "Other Mixed Litter"}
+}
+
 ```
 
 # Litter Plots
@@ -829,14 +912,34 @@ LitterTransect <- SRER_trimmed_data %>%
   dplyr::mutate(proportion = n / sum(n)) %>%
   dplyr::mutate(percent = proportion*100)
 
+LitterTransect$Transect <- factor(LitterTransect$Transect, levels = elevation.order)
+LitterTransect$Litter_Plotting <- factor(LitterTransect$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
+
+LitterTransect$Transect <- factor(LitterTransect$Transect, levels = elevation.order)
+
 # make a bar plot
 LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent,
                                          fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
-  labs(x = "Transect", y = "Frequency (%)", fill = "Litter") +
+  labs(x = "Transect (Low to High Elevation)", y = "Frequency (%)", fill = "Litter") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999")) +
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -854,6 +957,8 @@ LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent,
 
 LitterPlot
 
+ggsave("~/Desktop/SRER_Litter_Freq_Transect_Plot.pdf", LitterPlot, width = 10, height = 6)
+
 ```
 
 ### Litter_depth Plot
@@ -862,24 +967,24 @@ Make plot that shows litter type and cumulative depth across transects.
 
 ```{r Litter_depth_transects}
 
-LitterTransect$Litter_Plotting <- factor(LitterTransect$Litter_Plotting,
-                                         levels = c("LT-C", "LT-H",
-                                                    "Nonwoody and Woody Litter",
-                                                    "LT-W", "DUNG", "OTHER", "NONE"))  
-
 # make a bar plot
 LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth,
                                            fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
-  labs(x = "Transect", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
+  labs(x = "Transect (Low to High Elevation)", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("burlywood", "#009E73", "#006B4E", "burlywood4",
-                               "saddlebrown", "#999999", "black", "navy"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("LT-C", "LT-H", "Nonwoody and Woody Litter",
-                               "LT-W", "DUNG", "OTHER", "NONE", "n"),
-                    labels = c("Cactus Litter", "Nonwoody Litter", "Nonwoody and Woody Litter",
-                               "Woody Litter", "Dung", "Other Litter", "No Litter", "Count")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -887,7 +992,8 @@ LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth,
     axis.text.y = element_text(color="black", size=10),
     legend.title = element_text(color="black", size=12),
     legend.text = element_text(color="black", size=10),
-    legend.position = c(.7,.7),
+    legend.position = c(.17,.72),
+    legend.background = element_blank(),
     axis.title.x = element_text(color="black", size=14),
     axis.title.y = element_text(color="black", size=14, angle=90),
     panel.grid.major = element_blank(), # switch off major grid lines
@@ -929,7 +1035,7 @@ elev_depth <- ggplot(LitterTransect_all, aes(x = elev, y = totdepth)) +
   stat_poly_eq(use_label("eq"), formula = y ~ x) +
   stat_poly_eq(use_label("R2", "P"), formula = y ~ x, label.y = 0.9) +
   scale_x_continuous(expand = c(0, 0)) +
-  labs(x = "Elevation (m)", y = "Litter Depth (mm)", fill = "Litter Type") +
+  labs(x = "Elevation (m)", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -947,7 +1053,7 @@ elev_depth <- ggplot(LitterTransect_all, aes(x = elev, y = totdepth)) +
 
 elev_depth
 
-
+ggsave("~/Desktop/SRER_Litter_Depth_Transects_Elev_Corr.pdf", elev_depth, width = 10, height = 6)
 
 ```
 
@@ -1010,13 +1116,18 @@ LitterTopPlot <- ggplot(LitterTop, aes(x = Top_Plotting, y = totdepth,
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Top Layer", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -1068,6 +1179,8 @@ DepthVsHeight <- ggplot(SRER_trimmed_data, aes(x = Top_height, y = Litter_depth,
   
 DepthVsHeight
 
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight1.pdf", DepthVsHeight, width = 10, height = 6)
+
 ```
 
 ```{r Litter_depth_Top_layer_Litter_type}
@@ -1076,13 +1189,18 @@ DepthVsHeight
 DepthVsHeightType <- ggplot(SRER_trimmed_data, aes(x = Top_height, y = Litter_depth,
                                            fill = Litter)) +
   geom_point(pch = 21, color = "black", size = 3) +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+ scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Top Height (cm)", y = "Litter Depth (mm)", fill = "Litter Type") +
   theme_bw() +
@@ -1101,6 +1219,9 @@ DepthVsHeightType <- ggplot(SRER_trimmed_data, aes(x = Top_height, y = Litter_de
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 DepthVsHeightType
+
+
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight2.pdf", DepthVsHeightType, width = 10, height = 6)
 
 ```
 
@@ -1135,6 +1256,8 @@ NonWoodyDepth <- ggplot(NonWoodyLitter, aes(x = Top_height, y = Litter_depth,
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 NonWoodyDepth
+
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight3.pdf", NonWoodyDepth, width = 10, height = 6)
 
 ```
 
@@ -1171,6 +1294,8 @@ PRVELitterDepth <- ggplot(PRVELitter, aes(x = Top_height, y = Litter_depth,
 
 PRVELitterDepth
 
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight4.pdf", PRVELitterDepth, width = 10, height = 6)
+
 ```
 
 ```{r PRVE_only_Top_height_Litter_depth}
@@ -1206,6 +1331,8 @@ PRVENoLowerLitterDepth <- ggplot(PRVENoLowerLitter, aes(x = Top_height,
 
 PRVENoLowerLitterDepth
 
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight5.pdf", PRVENoLowerLitterDepth, width = 10, height = 6)
+
 ```
 
 ```{r PRVE_Top_height_elevation}
@@ -1230,6 +1357,8 @@ PRVEelev <- ggplot(PRVELitter, aes(x = Elevation, y = Top_height)) +
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 PRVEelev
+
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight6.pdf", PRVEelev, width = 10, height = 6)
 
 ```
 
@@ -1266,6 +1395,8 @@ SEGRLitterDepth <- ggplot(SEGRLitter, aes(x = Top_height, y = Litter_depth,
 
 SEGRLitterDepth
 
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight7.pdf", SEGRLitterDepth, width = 10, height = 6)
+
 ```
 
 ```{r ISTE_Top_height_Litter_depth}
@@ -1275,7 +1406,7 @@ ISTELitter <- subset(NonWoodyLitter, Top_layer_other == "ISTE")
 ISTELitter <- subset(ISTELitter, Top_Plotting == "L-SHRUB")
 
 # make a scatter plot to look at the relationship between top height and litter depth
-SEGRLitterDepth <- ggplot(SEGRLitter, aes(x = Top_height, y = Litter_depth,
+ISTELitterDepth <- ggplot(SEGRLitter, aes(x = Top_height, y = Litter_depth,
                                            fill = Litter)) +
   geom_point(pch = 21, color = "black", size = 5) +
   scale_fill_manual(values = c("#009E73", "black"), 
@@ -1299,7 +1430,9 @@ SEGRLitterDepth <- ggplot(SEGRLitter, aes(x = Top_height, y = Litter_depth,
     panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
-SEGRLitterDepth
+ISTELitterDepth
+
+ggsave("~/Desktop/SRER_Litter_Depth_TopHeight8.pdf", ISTELitterDepth, width = 10, height = 6)
 
 ```
 
@@ -1393,19 +1526,24 @@ sum_depth_max_top <- max(sum_depth_top$sum_depth_top)
 
 # make a bar plot
 MeanLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_Plotting, y = mean_depth,
-                                                fill = Litter)) +
+                                                fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Top Layer", y = "Mean Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   geom_point(aes(y = nTop*(mean_depth_max_top/top_freq_max), fill = "n"), size = 3, pch = 21, color = "black") +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999", "navy"), 
+   scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER", "n"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter",
-                               "Count")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter", "Count")) +
   scale_y_continuous(
     name = "Mean Litter Depth (mm)",
     limits = c(0, sum_mean_depth_max_top),
@@ -1432,8 +1570,12 @@ MeanLitterTopPlot
 
 ```{r Top_Plotting_cumulative_depth}
 
-LitterStatsTopFreq$Litter_Plotting <- factor(LitterStatsTopFreq$Litter_Plotting, levels = c("LT-C", "LT-H", "Nonwoody and Woody Litter",
-                               "LT-W", "DUNG", "OTHER", "NONE"))  
+LitterStatsTopFreq$Litter_Plotting <- factor(LitterStatsTopFreq$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
 
 # make a bar plot
 CumulLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_Plotting, y = depth,
@@ -1443,13 +1585,19 @@ CumulLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_Plotting, y = depth
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   geom_point(aes(y = nTop*(depth_max_top/top_freq_max), fill = "n"), size = 3, pch = 21,
              color = "black") +
-  scale_fill_manual(values = c("burlywood", "#009E73", "#006B4E", "burlywood4",
-                               "saddlebrown", "#999999", "black", "navy"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
                     name = NULL, 
-                    breaks = c("LT-C", "LT-H", "Nonwoody and Woody Litter",
-                               "LT-W", "DUNG", "OTHER", "NONE", "n"),
-                    labels = c("Cactus Litter", "Nonwoody Litter", "Nonwoody and Woody Litter",
-                               "Woody Litter", "Dung", "Other Litter", "No Litter", "Count")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter", "Count")) +
   scale_y_continuous(
     name = "Cumulative Litter Depth (mm)",
     limits = c(0, sum_depth_max_top),
@@ -1559,12 +1707,12 @@ mic_freq_max <- max(LitterStatsMicroFreq$nMic)
 # make a bar plot
 LitterMicroPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
                                                     y = depth,
-                                                    fill = Litter)) +
+                                                    fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Microsite", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+                               "black", "#999999", "blue"), 
                     name = NULL, 
                     breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
                                "OTHER"),
@@ -1596,17 +1744,22 @@ LitterMicroPlot
 # make a bar plot
 MeanLitterMicroPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
                                                         y = mean_depth,
-                                                        fill = Litter)) +
+                                                        fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Microsite", y = "Mean Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -1631,12 +1784,12 @@ MeanLitterMicroPlot
 # make a bar plot
 MedianLitterMicroPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
                                                           y = median_depth,
-                                                          fill = Litter)) +
+                                                          fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Microsite", y = "Median Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+                               "black", "#999999", "blue"), 
                     name = NULL, 
                     breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
                                "OTHER"),
@@ -1663,8 +1816,12 @@ MedianLitterMicroPlot
 
 ```{r Microsite_cumulative_depth}
 
-LitterStatsMicroFreq$Litter_Plotting <- factor(LitterStatsMicroFreq$Litter_Plotting, levels = c("LT-C", "LT-H", "Nonwoody and Woody Litter",
-                               "LT-W", "DUNG", "OTHER", "NONE")) 
+LitterStatsMicroFreq$Litter_Plotting <- factor(LitterStatsMicroFreq$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
 
 # make a bar plot
 CumulDepthMicroFreqPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
@@ -1674,16 +1831,21 @@ CumulDepthMicroFreqPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
   labs(x = "Microsite", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   geom_point(aes(y = nMic*(depth_max_mic/mic_freq_max), fill = "n"), size = 3, pch = 21, color = "black") +
-  scale_fill_manual(values = c("burlywood", "#009E73", "#006B4E", "burlywood4",
-                               "saddlebrown", "#999999", "black", "navy"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
                     name = NULL, 
-                    breaks = c("LT-C", "LT-H", "Nonwoody and Woody Litter",
-                               "LT-W", "DUNG", "OTHER", "NONE", "n"),
-                    labels = c("Cactus Litter", "Nonwoody Litter", "Nonwoody and Woody Litter",
-                               "Woody Litter", "Dung", "Other Litter", "No Litter", "Count")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter",
+                               "Count")) +
   scale_y_continuous(
     name = "Cumulative Litter Depth (mm)",
-    limits = c(0, 3200),
     sec.axis = sec_axis(~ . * (mic_freq_max/depth_max_mic), 
                         name = "Number of Observations")) +
   theme_bw() +
@@ -1801,98 +1963,41 @@ ggsave("~/Desktop/SRER_Weighted_Cumulative_Litter.pdf", WeightedLitterMicroObsPl
 
 ```{r}
 
-# look at unique values for Litter_other
-Litter_other <- unique(SRER_trimmed_data$Litter_other)
-print(Litter_other)
+TopMicro <- SRER_trimmed_data %>%
+  group_by(Microsite, Top_Plotting) %>%
+  dplyr::summarize(count = n(), .groups = "drop")
 
-# Make a new column
-SRER_trimmed_data$Litter_Plotting <- SRER_trimmed_data$Litter
+TopMicroPlot <- ggplot(TopMicro, aes(x = Microsite, y = count, fill = Top_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Microsite", y = "Number of Observations",
+       fill = "Top Layer") +
+  geom_point(size = 5, pch = 21, color = "black") +
+  scale_fill_manual(values = c("burlywood4", "#999999", "burlywood", "mediumpurple4",
+                               "coral4", "#D55E00", "#E69F00", "#009E73",
+                               "#CC79A7", "#0072B2", "cornsilk2", "darkgreen",
+                               "olivedrab3", "deepskyblue", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
 
-# if Litter_other is "H_W" paste "Nonwoody and Woody Litter"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "H_W")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
-}
+TopMicroPlot 
 
-# if Litter_other is "W_H" paste "Nonwoody and Woody Litter"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "W_H")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
-}
+ggsave("~/Desktop/SRER_Top_Layer_v_Microsite.pdf", TopMicroPlot, width = 10, height = 6)
 
-# if Litter_other is "H_C" paste "Nonwoody and Cacuts Litter"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "H_C")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Cactus Litter"}
-}
+```
 
-
-# if Litter_other is "H_Scat" paste "Nonwoody Litter and Dung"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "C_H")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Cactus Litter"}
-}
-
-# if Litter_other is "H_W_C" paste "Nonwoody, Woody, and Cactus Litter"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "H_W_C")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody, Woody, and Cactus Litter"}
-}
-
-# if Litter_other is "H_D" paste "Nonwoody Litter and Dung"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "H_D")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody Litter and Dung"}
-}
-
-# if Litter_other is "L_DUNG" paste "Nonwoody Litter and Dung"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "L_DUNG")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody Litter and Dung"}
-}
-
-# if Litter_other is "H_DUNG" paste "Nonwoody Litter and Dung"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "H_DUNG")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody Litter and Dung"}
-}
-
-
-# if Litter_other is "cow pie remnants" paste "Dung"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "cow pie remnants")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "DUNG"}
-}
-
-# if Litter_other is "H_Scat" paste "Nonwoody Litter nd Dung"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "H_Scat")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Nonwoody Litter and Dung"}
-}
-
-# if Litter_other is "CP" paste "DUNG"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "CP")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "DUNG"}
-}
-
-# if Litter_other is "W_C" paste "Woody and Cactus Litter"
-for (i in 1:nrow(SRER_trimmed_data)) {
-  if (!is.na(SRER_trimmed_data$Litter_other[i]) &&
-      SRER_trimmed_data$Litter_other[i] == "W_C")
-    {SRER_trimmed_data$Litter_Plotting[i] <- "Woody and Cactus Litter"}
-}
+```{r}
 
 # subset out just canopy and open microsites
 SRER_canopy_open <- subset(SRER_trimmed_data, Microsite %in% c("CANOPY", "OPEN"))
@@ -1924,18 +2029,12 @@ LitterMic <- add_row(LitterMic, Litter_Plotting = "Nonwoody, Woody, and Cactus L
 LitterMic <- add_row(LitterMic, Litter_Plotting = "Woody and Cactus Litter",
                      Microsite = "CANOPY", n = 0, mean_totdepth_all = 0)
 
-
 LitterMic$Litter_Plotting <- factor(LitterMic$Litter_Plotting,
-                                         levels = c("LT-H",
-                                                    "Nonwoody and Woody Litter",
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
                                                     "Nonwoody and Cactus Litter",
                                                     "Nonwoody, Woody, and Cactus Litter",
-                                                    "Nonwoody Litter and Dung",
-                                                    "LT-W",
-                                                    "LT-C",
-                                                    "Woody and Cactus Litter",
-                                                    "DUNG",
-                                                    "NONE"))
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
 
 LitterMicPlot <- ggplot(LitterMic, aes(x = Microsite, y = mean_totdepth_all,
                                        fill = Litter_Plotting)) +
@@ -1951,23 +2050,19 @@ LitterMicPlot <- ggplot(LitterMic, aes(x = Microsite, y = mean_totdepth_all,
                             y = n*(mean_depth_max_mic/mic_freq_max)),
              position = position_dodge2(width = 0.9, preserve = "single"), size = 3,
              pch = 21, color = "black", stroke = 1) +
-  scale_fill_manual(values = c("#009E73", "#006B4E", "burlywood", "burlywood4",
-                               "orange2", "tan4", "paleturquoise3", "#4F3419", 
-                               "saddlebrown", "#999999", "navy"), 
+ scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
                     name = NULL, 
                     breaks = c("LT-H", "Nonwoody and Woody Litter",
                                "Nonwoody and Cactus Litter",
-                               "Nonwoody, Woody, and Cactus Litter",
-                               "Nonwoody Litter and Dung",
-                               "LT-W", "LT-C", "Woody and Cactus Litter",
-                               "DUNG", "NONE", "n"),
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
                     labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
                                "Nonwoody and Cactus Litter",
-                               "Nonwoody, Woody, and Cactus Litter",
-                               "Nonwoody Litter and Dung",
-                               "Woody Litter", "Cactus Litter",
-                               "Woody and Cactus Litter", "Dung",
-                               "No Litter", "Count")) +
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter",
+                               "Count"))  +
   scale_y_continuous(
     name = "Mean Litter Depth (mm)",
     expand = c(0, 0),
@@ -2016,13 +2111,6 @@ filtered_df <- filtered_df[filtered_df$Litter_Plotting != "NONE", ]
 filtered_df <- add_row(filtered_df, Litter_Plotting = "LT-C",
                      Microsite = "CANOPY", Litter_depth = 0)
 
-filtered_df$Litter_Plotting <- factor(filtered_df$Litter_Plotting,
-                                         levels = c("LT-H",
-                                                    "Nonwoody and Woody Litter",
-                                                    "Nonwoody and Cactus Litter",
-                                                    "LT-W",
-                                                    "LT-C"))
-
 LitterMicBoxPlot <- ggplot(filtered_df, aes(x = Microsite, y = Litter_depth,
                                        fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
@@ -2030,23 +2118,19 @@ LitterMicBoxPlot <- ggplot(filtered_df, aes(x = Microsite, y = Litter_depth,
   geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
            color = "black",
            linewidth = 0.25) +
-  scale_fill_manual(values = c("#009E73", "#006B4E", "burlywood", "burlywood4",
-                               "orange2", "tan4", "paleturquoise3", "#4F3419", 
-                               "saddlebrown", "#999999", "navy"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
                     breaks = c("LT-H", "Nonwoody and Woody Litter",
                                "Nonwoody and Cactus Litter",
-                               "Nonwoody, Woody, and Cactus Litter",
-                               "Nonwoody Litter and Dung",
-                               "LT-W", "LT-C", "Woody and Cactus Litter",
-                               "DUNG", "NONE"),
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
                     labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
                                "Nonwoody and Cactus Litter",
-                               "Nonwoody, Woody, and Cactus Litter",
-                               "Nonwoody Litter and Dung",
-                               "Woody Litter", "Cactus Litter",
-                               "Woody and Cactus Litter", "Dung",
-                               "No Litter")) +
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter"))  +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(clip = "off") +
   ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
@@ -2066,11 +2150,14 @@ LitterMicBoxPlot <- ggplot(filtered_df, aes(x = Microsite, y = Litter_depth,
 
 LitterMicBoxPlot
 
+ggsave("~/Desktop/SRER_Microsite_Mean_Litter.pdf", LitterMicBoxPlot, width = 10,
+       height = 6)
+
 ```
 
 ```{r}
 
-SRER_nonwoody_only <- subset(SRER_canopy_open, Litter_Plotting %in% c("LT-H", "Nonwoody and Woody Litter"))
+SRER_nonwoody_only <- subset(SRER_canopy_open, Litter_Plotting %in% c("LT-H", "Nonwoody and Woody Litter", "Nonwoody and Cactus Litter"))
 
 LitterBoxPlot <- ggplot(SRER_nonwoody_only, aes(x = Microsite, y = Litter_depth,
                                        fill = Litter_Plotting)) +
@@ -2079,12 +2166,19 @@ LitterBoxPlot <- ggplot(SRER_nonwoody_only, aes(x = Microsite, y = Litter_depth,
   geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
            color = "black",
            linewidth = 0.25) +
-  scale_fill_manual(values = c("#009E73", "#006B4E", "burlywood", "burlywood4",
-                               "orange2", "tan4", "paleturquoise3", "#4F3419", 
-                               "saddlebrown", "#999999", "navy"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("LT-H", "Nonwoody and Woody Litter"),
-                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter")) +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(clip = "off") +
   ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
@@ -2103,6 +2197,9 @@ LitterBoxPlot <- ggplot(SRER_nonwoody_only, aes(x = Microsite, y = Litter_depth,
   scale_x_discrete(guide = ggprism::guide_prism_bracket())
 
 LitterBoxPlot
+
+ggsave("~/Desktop/SRER_Microsite_Mean_Nonwood_Litter.pdf", LitterBoxPlot, width = 10,
+       height = 6)
 
 ```
 
@@ -2123,4 +2220,25 @@ kruskal.test(Litter_depth ~ Microsite, data = SRER_nonwoody)
 kruskal.test(Litter_depth ~ Microsite, data = SRER_nonwoody_woody)
 
 
+```
+
+```{r nice_color_palette}
+
+ scale_fill_manual(values = c("#009E73", "#006B4E", "burlywood", "burlywood4",
+                               "orange2", "tan4", "paleturquoise3", "#4F3419", 
+                               "saddlebrown", "#999999", "navy"), 
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter",
+                               "Nonwoody Litter and Dung",
+                               "LT-W", "LT-C", "Woody and Cactus Litter",
+                               "DUNG", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter",
+                               "Nonwoody Litter and Dung",
+                               "Woody Litter", "Cactus Litter",
+                               "Woody and Cactus Litter", "Dung",
+                               "No Litter", "Count")) +
 ```

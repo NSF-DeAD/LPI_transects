@@ -1,0 +1,1047 @@
+---
+title: "LPI Transects + Quadrats Fall 2025 Data Clean-Up"
+author: "Alexi C. Besser"
+format:
+  html:
+    embed-resources: true
+    code-background: true
+    code-line-numbers: true
+toc: true
+editor: visual
+---
+
+# README
+
+This code reads in individual csv files containing modified line point-intercept (LPI) + quadrat transect data collected at the Santa Rita Experimental Range (SRER), Onaqui (ONAQ), Moab (MOAB), and Jornada Experimental Range (JORN) National Ecological Observatory Network (NEON) sites in Spring 2025. GPS coordinates were taken using a SparkFun real-time kinematic (RTK) Express global navigation satellite system (GNSS) mounted to a 1.74 m monopole. Data for each transect were recorded in a unique project in the SW Maps Application on an iPad. Drop-down menus were used for primary fields and free-form text was used for "other" fields. Replicate data points and data points containing irreconcilable typos or other mistakes are removed in this code.
+
+A table of common plant codes can be found in the shared Google Drive and in ASU's LabArchives Notebook.
+
+## Load Packages
+
+```{r setup}
+
+library(here)
+library(readr)
+library(plyr)
+library(dplyr)
+library(stringr)
+
+```
+
+# SRER
+
+## 20-24 April 2025
+
+**Personnel:** Alexi Besser, Isabel Torres, Heather Throop
+
+**Brief Description of Modified LPI Protocol:** Transects ran S to N and were read on the W side. A pin flag was dropped every 1 m along the transect. All vegetation layers (including canopies) intersecting this pin were noted as dead or living and were recorded to species if known and life-form if not. The top layer height (cm), soil surface texture, litter type(s), litter depth (mm), and microsite were also recorded. A SparkFun RTK Express GNSS was used to record the location of each transect point.
+
+50 m transects: SRER001, SRER018, SRER021, SRER026, SRER030, SRER034, SRER039, SRER041, SRER046, SRER050
+
+50 m transect with quadrats at 1 m, 2 m, 3 m, 4 m, 5 m, 34 m, 37 m, 46 m, 47 m, 48 m, 49 m, 50 m: SRER041
+
+50 m transects with quadrats every 5 m (50 m, 45 m, 40 m, 35 m, 30 m, 25 m, 20 m, 15 m, 10 m, 5 m): SRER001, SRER030, SRER050, SRER039
+
+### Levels 0 and 1 Data
+
+```{r import_SRER_L0}
+
+### LEVEL 0 DATA ###
+
+# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
+SRER_L0_Dropbox_folder <- "https://www.dropbox.com/scl/fo/smaw1p81a1zxoknzrq7o9/AO0ry1SISFlULfHg8eVZ_mI?rlkey=xnljoexwgvjepso5hwsaqhnw5&st=ob1brlj2&dl=1"
+
+# specify the local folder containing the downloaded L0 transect data
+setwd("/Users/AlexiBesser/Downloads/SRER_LPI_L0_Spring_2025_csv_files")
+SRER_L0_data_files <- dir("/Users/AlexiBesser/Downloads/SRER_LPI_L0_Spring_2025_csv_files")
+
+
+### LEVEL 1 DATA ###
+
+# read in L0 csv files and create a new column for transect ID
+SRER_L1_data <- read_csv(SRER_L0_data_files, id = "Transect") %>%
+   mutate(Transect = str_remove_all(Transect, ".csv"))
+
+# write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder
+write.csv(SRER_L1_data, "/Users/AlexiBesser/Desktop/SRER_LPI_L1_Spring_2025_Data.csv")
+
+```
+
+There is now 1 csv file containing data for all 10 transects. This is considered level 1 data.
+
+**L1 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> SRER \> Transect_LPI_Data \> Level_1 \> Spring_2025 \> csv_file
+
+```{r read_SRER_L1}
+
+# read in L1 transect data
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+#SRER_L1_data <- read.csv("")
+
+```
+
+### Clean Level 1 Data
+
+Investigate and rectify duplicate rows.
+
+```{r SRER_merge_duplicates}
+
+# create a data frame for duplicate points 
+SRER_duplicate_points <- SRER_L1_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() 
+
+# there are 6 rows of duplicate points
+
+# SRER018 (35): 2 rows with "35" for Remarks column ("17" and "18" in ID column). All the attributes for one of these rows (ID "18") are empty - this one will be removed from the data frame.
+SRER_trimmed_data <- SRER_L1_data[!(SRER_L1_data$Transect=="SRER018" & SRER_L1_data$ID == "18"),]
+
+# SRER034 (37): 2 rows with "37" for Remarks column ("14" and "16" in ID column). ID "16" contains the file name for a photograph ("20250422232557.jpg") - this file name will be copied and pasted into the Photo column for the ID "14" row and the ID "16" row will be deleted.
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER034" & SRER_trimmed_data$ID == "14", "Photo"] <- "20250422232557.jpg"
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER034" & SRER_trimmed_data$ID == "16"),]
+
+# SRER039 (38): 2 rows with "38" for Remarks column ("14" and "23" in ID column). All the attributes are similar, so we will keep the later row, as there was an issue with the GPS around this point in the transect.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "14"),]
+
+# double-check that all duplicate points were fixed
+SRER_duplicate_points_check <- SRER_trimmed_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() 
+
+```
+
+Look at unique *Remarks*. Remove rows that are not points on transects but rather notes at the end of transects and rows with "NA" in every column.
+
+```{r SRER_clean_Remarks}
+
+# extract and review unique Remarks
+unique(SRER_trimmed_data$Remarks)
+
+# looks like we need to merge GPS coordinates with LPI data for SRER039 (there was an issue with the GPS)
+
+# SRER039 (39): copy and paste GPS coordinates from the row for ID "22" into the row for ID "13"
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "13", 4:18] <- SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "22", 4:18]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "22"),]
+# SRER039 (40): copy and paste GPS coordinates from the row for ID "21" into the row for ID "12"
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "12", 4:18] <- SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "21", 4:18]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "21"),]
+# SRER039 (41): copy and paste GPS coordinates from the row for ID "20" into the row for ID "11"
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "11", 4:18] <- SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "20", 4:18]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "20"),]
+# SRER039 (42): copy and paste GPS coordinates from the row for ID "19" into the row for ID "10"
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "10", 4:18] <- SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "19", 4:18]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "19"),]
+# SRER039 (43): copy and paste GPS coordinates from the row for ID "18" into the row for ID "9"
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "9", 4:18] <- SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "18", 4:18]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "18"),] 
+# SRER039 (44): copy and paste GPS coordinates from the row for ID "17" into the row for ID "16"
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "16", 4:18] <- SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "17", 4:18]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "17"),]
+
+# double-check that the Remarks column now only contains m points
+unique(SRER_trimmed_data$Remarks)
+
+```
+
+There are now 500 rows in the trimmed data frame! 10 transects x 50 points per transect = 500 data points, so this makes sense, but double-check that there are 50 rows for every transect.
+
+```{r SRER_check_rows_per_transect}
+
+# create a character string of the transects
+SRER_Transects <- unique(SRER_trimmed_data$Transect)
+
+# create an empty list for the number of rows per transect
+SRER_rows_per_transect <- list()
+
+# run a for loop to count the number of rows per transect
+for (i in SRER_Transects) {
+  SRER_rows_per_transect[[i]] <- sum(SRER_trimmed_data$Transect == i)
+  cat("Transect:", i, "- Rows:", SRER_rows_per_transect[[i]], "\n")
+}
+
+```
+
+Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
+
+```{r SRER_clean_Top_layer}
+
+# create a data frame for rows with an "NA" for Top_layer
+SRER_NA_Top_layer <- subset(SRER_trimmed_data, is.na(Top_layer))
+
+# there are 4 rows that have an "NA" for Top_layer
+# unfortunately, 3 of these rows also have "NA" for every other column and have to be removed from the data frame
+# SRER030 (40): ID "12" - includes a quadrat - litter is visible in the quadrat photograph (GOPRO446.jpg) but the only columns filled out for this point are "0" for Litter_depth_west, "L-ISTE_patch" for Nearby_canopy_1, and "1012" for BagID, so this point also needs to be removed from the data frame
+SRER_trimmed_data <- SRER_trimmed_data[!is.na(SRER_trimmed_data$Top_layer),]
+
+# look at unique values for Top_layer_other
+unique(SRER_trimmed_data$Top_layer_other)
+
+# fix typos
+
+# "PRVEA" appears once for transect SRER046 - this must be "PRVE"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PRVEA"] <- "PRVE"
+
+# "L-LATR" appears once for transect SRER050 - this should just be "LATR"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="L-LATR"] <- "LATR"
+
+# "PAFL21" appears once for transect SRER021 - this should just be "PAFL" (the top height is 210, so it was probably initially typed into Top_layer_other rather than Top_height)
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PAFL21"] <- "PAFL"
+
+```
+
+```{r SRER_clean_Lower_1}
+
+# create a data frame for rows with an "NA" for Lower_1
+SRER_NA_Lower_1 <- subset(SRER_trimmed_data, is.na(Lower_1))
+
+# there are 5 rows that have an "NA" for Lower_1
+# these rows all have values in the Top_layer and/or Top_layer_other column and have "N" values for Lower_2 and Lower_3, so we will assume these "NA" values should all be "N"
+SRER_trimmed_data$Lower_1[is.na(SRER_trimmed_data$Lower_1)] <- "N"
+
+# look at unique values for Lower_1_other
+unique(SRER_trimmed_data$Lower_1_other)
+
+# no typos
+
+```
+
+```{r SRER_clean_Lower_2}
+
+# create a data frame for rows with an "NA" for Lower_2
+SRER_NA_Lower_2 <- subset(SRER_trimmed_data, is.na(Lower_2))
+
+# there are no rows with an "NA" for Lower_2
+
+# look at unique values for Lower_2_other
+unique(SRER_trimmed_data$Lower_2_other)
+
+# no typos
+
+```
+
+```{r SRER_clean_Lower_3}
+
+# create a data frame for rows with an "NA" for Lower_3
+SRER_NA_Lower_3 <- subset(SRER_trimmed_data, is.na(Lower_3))
+
+# there is 1 row with an "NA" for Lower_3
+# SRER021 (40): ID "11" - all other layers have an "N", so we can safely assume Lower_3 should be "N", too
+SRER_trimmed_data$Lower_3[is.na(SRER_trimmed_data$Lower_3)] <- "N"
+
+# look at unique values for Lower_3_other
+unique(SRER_trimmed_data$Lower_3_other)
+
+# no typos
+
+```
+
+```{r SRER_clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+SRER_NA_Soil_surface <- subset(SRER_trimmed_data, is.na(Soil_surface))
+
+# there are 2 rows that have an "NA" for Soil_surface
+
+# the points on either side of both of these points have "SOIL" for Soil_surface, so we will go ahead and assume these should be "SOIL" as well
+SRER_trimmed_data$Soil_surface[is.na(SRER_trimmed_data$Soil_surface)] <- "SOIL"
+
+# look at unique values for Soil_surface_other
+unique(SRER_trimmed_data$Soil_surface_other)
+
+# no typos
+
+```
+
+```{r SRER_clean_Microsite}
+
+# create a data frame for rows with an "NA" for Microsite
+SRER_NA_Microsite <- subset(SRER_trimmed_data, is.na(Microsite))
+
+# there are 3 rows that have an "NA" for Microsite
+
+# 2 of these rows have "N" for Top_layer and 1 has "D-FORB" for Top_layer, so they should all have "OPEN" for Microsite
+SRER_trimmed_data$Microsite[is.na(SRER_trimmed_data$Microsite)] <- "OPEN"
+
+# look at unique values for Microstie_other
+unique(SRER_trimmed_data$Microsite_other)
+
+# no typos
+
+```
+
+```{r SRER_clean_Top_height}
+
+# create a data frame for rows with an "NA" for Microsite
+SRER_NA_Top_height <- subset(SRER_trimmed_data, is.na(Top_height))
+
+# there are 6 rows that have an "NA" for Top_height
+
+# 1 of these rows has an "L-OTHER" for Top_layer and is surrounded by points that have the same Top_layer and a Top_height of 60, so we will assume the Top_height should be 60
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER041" & SRER_trimmed_data$ID == "4", "Top_height"] <- 60
+
+# the rest should be 0
+SRER_trimmed_data$Top_height[is.na(SRER_trimmed_data$Top_height)] <- 0
+
+```
+
+```{r SRER_clean_Litter}
+
+# create a data frame for rows with an "NA" for Litter
+SRER_NA_Litter <- subset(SRER_trimmed_data, is.na(Litter))
+
+# there are no rows that have an "NA" for Litter
+
+# look at unique values for Litter_other
+unique(SRER_trimmed_data$Litter_other)
+
+# no typos
+# create a data frame for rows with an "NA" for Litter
+SRER_NA_Litter_depth <- subset(SRER_trimmed_data,
+  is.na(Litter_depth_center) |
+  is.na(Litter_depth_north) |
+  is.na(Litter_depth_east) |
+  is.na(Litter_depth_south) |
+  is.na(Litter_depth_west))
+
+# 1 of these rows has "N" for Litter
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER050" & SRER_trimmed_data$ID == "29", "Litter_depth_north"] <- "0"
+
+# 1 of these rows has a quadrat photo and there looks to be a pretty even distribution of litter - let's take the average of the other 4 litter depth measurements
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER039" & SRER_trimmed_data$ID == "37", "Litter_depth_west"] <- 4
+
+# let's just take the average of the other 4 litter depth measurements
+SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER050" & SRER_trimmed_data$ID == "15", "Litter_depth_west"] <- 2
+
+```
+
+```{r SRER_clean_Nearby_canopy}
+
+# look at unique values for Nearby_canopy_1
+unique(SRER_trimmed_data$Nearby_canopy_1)
+
+# fix typos
+SRER_trimmed_data$Nearby_canopy_1[SRER_trimmed_data$Nearby_canopy_1 == "ERLE_DSUBS_patch"] <- "ERLE_D-SUBS_patch"
+
+# look at unique values for Nearby_canopy_2
+unique(SRER_trimmed_data$Nearby_canopy_2)
+
+# fix typos
+SRER_trimmed_data$Nearby_canopy_2[SRER_trimmed_data$Nearby_canopy_2 == "L-Op_95SW_25H_35L_15P"] <- "L-OP_95SW_25H_35L_15P"
+
+# look at unique values for Nearby_canopy_3
+unique(SRER_trimmed_data$Nearby_canopy_3)
+
+# look at unique values for Nearby_canopy_4
+unique(SRER_trimmed_data$Nearby_canopy_4)
+
+# look at unique values for Nearby_canopy_5
+unique(SRER_trimmed_data$Nearby_canopy_5)
+
+```
+
+### Level 2 Data
+
+```{r save_SRER_L2}
+
+# write a csv file of the L2 transect data, save it locally, then upload it to the appropriate Dropbox folder
+write.csv(SRER_trimmed_data, "/Users/AlexiBesser/Desktop/SRER_LPI_L2_Spring_2025_Data.csv")
+
+```
+
+### Transect Locations
+
+```{r SRER_transect_locations}
+
+SRER_Spring_2025_Transect_Locations <- SRER_trimmed_data %>%
+  filter(Remarks == 25) %>%
+  select(Transect, Latitude, Longitude, Elevation)
+
+```
+
+### Quadrat Sample Log
+
+```{r quadrat_sample_log}
+
+SRER_quad_samp_log <- SRER_trimmed_data %>%
+  select(BagID, Transect, Remarks, Litter, Litter_other, Litter_depth_center,
+         Litter_depth_north, Litter_depth_east, Litter_depth_south,
+         Litter_depth_west, Nearby_canopy_1, Nearby_canopy_2, Nearby_canopy_3,
+         Nearby_canopy_4, Nearby_canopy_5)
+
+SRER_quad_samp_log <- SRER_quad_samp_log[!(is.na(SRER_quad_samp_log$BagID)),]
+
+write.csv(SRER_quad_samp_log, "SRER_Litter_Quadrat_Sample_Log_Spring_2025.csv", row.names = FALSE)
+
+```
+
+# JORN
+
+## 25-29 April 2025
+
+**Personnel:** Alexi Besser, Isabel Torres
+
+**Brief Description of Modified LPI Protocol:** Transects ran S to N and were read on the W side. A pin flag was dropped every 1 m along the transect. All vegetation layers (including canopies) intersecting this pin were noted as dead or living and were recorded to species if known and life-form if not. The top layer height (cm), soil surface texture, litter type(s), litter depth (mm), and microsite were also recorded. A SparkFun RTK Express GNSS was used to record the location of each transect point.
+
+50 m transects: JORN102, JORN104, JORN105, JORN109, JORN111, JORN114, JORN117, JORN120, JORN126, JORN138, JORN139, JORN140, JORN141, JORN144
+
+50 m transects with quadrats every 5 m (50 m, 45 m, 40 m, 35 m, 30 m, 25 m, 20 m, 15 m, 10 m, 5 m): JORN019, JORN035, JORN037, JORN123, JORN129, JORN137
+
+### Levels 0 and 1 Data
+
+```{r import_JORN_L0}
+
+### LEVEL 0 DATA ###
+
+# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
+JORN_L0_Dropbox_folder <- "https://www.dropbox.com/scl/fo/lzbc5lp259cl4b9uukf9n/AGPCTbNu63Ifj74PO3JMxeE?rlkey=30r5xyy71xqbmby838qob5vh5&st=vmotyt9a&dl=1"
+
+# specify the local folder containing the downloaded L0 transect data
+setwd("/Users/AlexiBesser/Downloads/JORN_LPI_L0_Spring_2025_csv_files")
+JORN_L0_data_files <- dir("/Users/AlexiBesser/Downloads/JORN_LPI_L0_Spring_2025_csv_files")
+
+
+### LEVEL 1 DATA ###
+
+# read in L0 csv files and create a new column for transect ID
+JORN_L1_data <- read_csv(JORN_L0_data_files, id = "Transect") %>%
+   mutate(Transect = str_remove_all(Transect, ".csv"))
+
+# write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder
+write.csv(JORN_L1_data, "/Users/AlexiBesser/Desktop/JORN_LPI_L1_Spring_2025_Data.csv")
+
+```
+
+There is now 1 csv file containing data for all 20 transects. This is considered level 1 data.
+
+**L1 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> JORN \> Transect_LPI_Data \> Level_1 \> Spring_2025 \> csv_file
+
+```{r read_JORN_L1}
+
+# read in L1 transect data
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+#SRER_L1_data <- read.csv("")
+
+```
+
+### Clean Level 1 Data
+
+Investigate and rectify duplicate rows.
+
+```{r JORN_merge_duplicates}
+
+# create a data frame for duplicate points 
+JORN_duplicate_points <- JORN_L1_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() 
+
+# there are 12 rows of duplicate points
+
+# JORN037 (17): 2 rows with "17" for Remarks column ("35" and "36" in ID column). All the attributes for one of these rows (ID "36") are empty - this one will be removed from the data frame.
+JORN_trimmed_data <- JORN_L1_data[!(JORN_L1_data$Transect=="JORN037" & JORN_L1_data$ID == "36"),]
+
+# JORN105 (36): 2 rows with "36" for Remarks column ("15" and "16" in ID column). All the attributes for one of these rows (ID "16") are empty except for Litter_depth_west, which is "0" - this value will be pasted into the Litter_depth_west column for the ID "15" row and the ID "16" row will be deleted.
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN105" & JORN_trimmed_data$ID == "15", "Litter_depth_west"] <- "0"
+JORN_trimmed_data <- JORN_trimmed_data[!(JORN_trimmed_data$Transect=="JORN105" & JORN_trimmed_data$ID == "16"),]
+
+# JORN105 (29): 2 rows with "29" for Remarks column ("23" and "24" in ID column). All the attributes for one of these rows (ID "14") are empty except for Litter_depth_west, which is "0" - this value will be pasted into the Litter_depth_west column for the ID "23" row and the ID "24" row will be deleted.
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN105" & JORN_trimmed_data$ID == "23", "Litter_depth_west"] <- "0"
+JORN_trimmed_data <- JORN_trimmed_data[!(JORN_trimmed_data$Transect=="JORN105" & JORN_trimmed_data$ID == "24"),]
+
+# JORN117 (14): 2 rows with "14" for Remarks column ("37" and "38" in ID column). All the attributes for one of these rows (ID "38") are empty - this one will be removed from the data frame.
+JORN_trimmed_data <- JORN_trimmed_data[!(JORN_trimmed_data$Transect=="JORN117" & JORN_trimmed_data$ID == "38"),]
+
+# JORN138 (25): 2 rows with "25" for Remarks column ("26" and "27" in ID column). All the attributes for one of these rows (ID "27") are empty - this one will be removed from the data frame.
+JORN_trimmed_data <- JORN_trimmed_data[!(JORN_trimmed_data$Transect=="JORN138" & JORN_trimmed_data$ID == "27"),]
+
+# JORN141 (37): 2 rows with "37" for Remarks column ("14" and "16" in ID column). The row with the ID "16" should be for the 35 m mark, which is missing.
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN141" & JORN_trimmed_data$ID == "16", "Remarks"] <- "35"
+
+# double-check that all duplicate points were fixed
+JORN_duplicate_points_check <- JORN_trimmed_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() 
+
+```
+
+Look at unique *Remarks*. Remove rows that are not points on transects but rather notes at the end of transects and rows with "NA" in every column.
+
+```{r JORN_clean_Remarks}
+
+# extract and review unique Remarks
+unique(JORN_trimmed_data$Remarks)
+
+# pull dune start and end GPS coordinates into a separate data frame
+dune_GPS_coords <- JORN_trimmed_data[grepl("[A-Za-z]", JORN_trimmed_data$Remarks), ]
+
+# write a csv file for the dune start and end GPS coordinates
+write.csv(dune_GPS_coords, "JORN_dune_GPS_coords_Spring_2025.csv", row.names = FALSE)
+
+# make a character string of the Remarks for dune start and end GPS coordinate rows
+dune_GPS_remarks <- dune_GPS_coords$Remarks
+
+# remove dune start and end GPS coordinates from the main data frame
+JORN_trimmed_data <- JORN_trimmed_data[!grepl(paste(dune_GPS_remarks, collapse = "|"), JORN_trimmed_data$Remarks), ]
+
+# double-check that the Remarks column now only contains m points
+unique(JORN_trimmed_data$Remarks)
+
+```
+
+There are now 1,000 rows in the trimmed data frame! 20 transects x 50 points per transect = 1,000 data points, so this makes sense, but double-check that there are 50 rows for every transect.
+
+```{r JORN_check_rows_per_transect}
+
+# create a character string of the transects
+JORN_Transects <- unique(JORN_trimmed_data$Transect)
+
+# create an empty list for the number of rows per transect
+JORN_rows_per_transect <- list()
+
+# run a for loop to count the number of rows per transect
+for (i in JORN_Transects) {
+  JORN_rows_per_transect[[i]] <- sum(JORN_trimmed_data$Transect == i)
+  cat("Transect:", i, "- Rows:", JORN_rows_per_transect[[i]], "\n")
+}
+
+```
+
+Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
+
+```{r JORN_clean_Top_layer}
+
+# create a data frame for rows with an "NA" for Top_layer
+JORN_NA_Top_layer <- subset(JORN_trimmed_data, is.na(Top_layer))
+
+# there are 15 rows that have an "NA" for Top_layer
+
+# 7 of these rows have an "N" for Lower_layer_1 and a Top_height of 0, so we will assume their Top_layer should be "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN104" & JORN_trimmed_data$ID == "12", "Top_layer"] <- "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN105" & JORN_trimmed_data$ID == "52", "Top_layer"] <- "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN111" & JORN_trimmed_data$ID == "13", "Top_layer"] <- "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN111" & JORN_trimmed_data$ID == "22", "Top_layer"] <- "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN111" & JORN_trimmed_data$ID == "23", "Top_layer"] <- "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN123" & JORN_trimmed_data$ID == "42", "Top_layer"] <- "N"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN139" & JORN_trimmed_data$ID == "6", "Top_layer"] <- "N"
+
+# JORN037 (18): ID "34" has a Lower_layer_1 of "D-PGRASS" and a Top_height of 10, but not other lower layers - let's assume the Top_layer should be D-PGRASS and there are no lower layers
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN037" & JORN_trimmed_data$ID == "34", "Top_layer"] <- "D-PGRASS"
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN037" & JORN_trimmed_data$ID == "34", "Lower_1"] <- "N"
+
+# unfortunately, the 7 remaining rows also have "NA" for every other column (except Litter_depth_west, which is 0 for 6/7 rows) and have to be removed from the data frame
+# first, put the 5 rows that had quadrats in a separate data frame to include in the quadrat sample log later one
+JORN_NA_quadrats <- JORN_trimmed_data[is.na(JORN_trimmed_data$Top_layer),]
+JORN_NA_quadrats <- JORN_NA_quadrats %>%
+  filter(ID %in% c(35, 46, 38, 50, 22))
+# now, remove the rows from the data frame
+JORN_trimmed_data <- JORN_trimmed_data[!is.na(JORN_trimmed_data$Top_layer),]
+
+# look at unique values for Top_layer_other
+unique(JORN_trimmed_data$Top_layer_other)
+
+# no typos
+
+
+```
+
+```{r JORN_clean_Lower_1}
+
+# create a data frame for rows with an "NA" for Lower_1
+JORN_NA_Lower_1 <- subset(JORN_trimmed_data, is.na(Lower_1))
+
+# there are 11 rows that have an "NA" for Lower_1
+# these rows all have values in the Top_layer and/or Top_layer_other column and have "N" values for Lower_2 and Lower_3, so we will assume these "NA" values should all be "N"
+JORN_trimmed_data$Lower_1[is.na(JORN_trimmed_data$Lower_1)] <- "N"
+
+# look at unique values for Lower_1_other
+unique(JORN_trimmed_data$Lower_1_other)
+
+# fix typos
+
+# "PRGO" appears once for transect JORN019 - this should just be "PRGL"
+JORN_trimmed_data$Lower_1_other[JORN_trimmed_data$Lower_1_other=="POGR"] <- "PRGL"
+
+```
+
+```{r JORN_clean_Lower_2}
+
+# create a data frame for rows with an "NA" for Lower_2
+JORN_NA_Lower_2 <- subset(JORN_trimmed_data, is.na(Lower_2))
+
+# there are 6 rows with an "NA" for Lower_2
+
+# all of these rows have an "N" for Lower_1, so Lower_2 should be "N" as well
+JORN_trimmed_data$Lower_2[is.na(JORN_trimmed_data$Lower_2)] <- "N"
+
+# look at unique values for Lower_2_other
+unique(JORN_trimmed_data$Lower_2_other)
+
+# no typos
+
+```
+
+```{r JORN_clean_Lower_3}
+
+# create a data frame for rows with an "NA" for Lower_3
+JORN_NA_Lower_3 <- subset(JORN_trimmed_data, is.na(Lower_3))
+
+# there are 9 rows with an "NA" for Lower_3
+# all of these rows have an "N" for Lower_2, so Lower_3 should be "N" as well
+JORN_trimmed_data$Lower_3[is.na(JORN_trimmed_data$Lower_3)] <- "N"
+
+# look at unique values for Lower_3_other
+unique(JORN_trimmed_data$Lower_3_other)
+
+# no typos
+
+```
+
+```{r JORN_clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+JORN_NA_Soil_surface <- subset(JORN_trimmed_data, is.na(Soil_surface))
+
+# there are 3 rows that have an "NA" for Soil_surface
+
+# all points along the transect for one of these points have "SOIL" for Soil_surface, so we will go ahead and assume this point should have "SOIL" as well
+# the other two points are from the same transect, the point in the middle of them has "BURROW" for Soil_surface, but the vast majority of the other points have "SOIL", so we will go ahead and assume this point should have "SOIL" as well
+JORN_trimmed_data$Soil_surface[is.na(JORN_trimmed_data$Soil_surface)] <- "SOIL"
+
+# look at unique values for Soil_surface_other
+unique(JORN_trimmed_data$Soil_surface_other)
+
+# no typos
+
+```
+
+```{r JORN_clean_Microsite}
+
+# create a data frame for rows with an "NA" for Microsite
+JORN_NA_Microsite <- subset(JORN_trimmed_data, is.na(Microsite))
+
+# there are 9 rows that have an "NA" for Microsite
+
+# all of these rows have "N" for Top_layer and a Top_height of 0, so they should all have "OPEN" for Microsite
+JORN_trimmed_data$Microsite[is.na(JORN_trimmed_data$Microsite)] <- "OPEN"
+
+# look at unique values for Microstie_other
+unique(JORN_trimmed_data$Microsite_other)
+
+# no typos
+
+```
+
+```{r JORN_clean_Top_height}
+
+# create a data frame for rows with an "NA" for Microsite
+JORN_NA_Top_height <- subset(JORN_trimmed_data, is.na(Top_height))
+
+# there are 5 rows that have an "NA" for Top_height
+
+# all of these rows have "N" for Top_layer, so their Top_height should be 0
+JORN_trimmed_data$Top_height[is.na(JORN_trimmed_data$Top_height)] <- 0
+
+```
+
+```{r JORN_clean_Litter}
+
+# create a data frame for rows with an "NA" for Litter
+JORN_NA_Litter <- subset(JORN_trimmed_data, is.na(Litter))
+
+# there are 3 rows that have an "NA" for Litter
+
+# they all have litter depth measurements of 0, so they should have "N" for Litter
+JORN_trimmed_data$Litter[is.na(JORN_trimmed_data$Litter)] <- "N"
+
+# look at unique values for Litter_other
+unique(JORN_trimmed_data$Litter_other)
+
+# no typos
+
+# create a data frame for rows with "NA" values for litter depth measurements
+JORN_NA_Litter_depth <- subset(JORN_trimmed_data,
+  is.na(Litter_depth_center) |
+  is.na(Litter_depth_north) |
+  is.na(Litter_depth_east) |
+  is.na(Litter_depth_south) |
+  is.na(Litter_depth_west))
+
+# there are 25 rows that have "NA" for at least one litter depth measurement
+
+# make sure litter depth values are numeric
+JORN_trimmed_data$Litter_depth_center <- as.numeric(JORN_trimmed_data$Litter_depth_center)
+JORN_trimmed_data$Litter_depth_north <- as.numeric(JORN_trimmed_data$Litter_depth_north)
+JORN_trimmed_data$Litter_depth_east <- as.numeric(JORN_trimmed_data$Litter_depth_east)
+JORN_trimmed_data$Litter_depth_south <- as.numeric(JORN_trimmed_data$Litter_depth_south)
+JORN_trimmed_data$Litter_depth_west <- as.numeric(JORN_trimmed_data$Litter_depth_west)
+
+# 6 of these rows have "LT-H" for Litter or "H_W" for Litter_other, so we will take the average litter depth from the other four measurements and paste it into the missing measurement
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN037" & JORN_trimmed_data$ID == "42", "Litter_depth_west"] <- 0
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN117" & JORN_trimmed_data$ID == "26", "Litter_depth_west"] <- 0
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN126" & JORN_trimmed_data$ID == "42", "Litter_depth_north"] <- 1
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN137" & JORN_trimmed_data$ID == "2", "Litter_depth_north"] <- 1
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN111" & JORN_trimmed_data$ID == "32", "Litter_depth_center"] <- 1
+JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN129" & JORN_trimmed_data$ID == "3", "Litter_depth_north"] <- 2
+
+# 1 row has "LT-W" for Litter and 1 has "B" for Litter_other, so these litter depth measurements should be 0
+# the remaining 17 rows have "N" for Litter
+JORN_trimmed_data$Litter_depth_center[is.na(JORN_trimmed_data$Litter_depth_center)] <- "N"
+JORN_trimmed_data$Litter_depth_north[is.na(JORN_trimmed_data$Litter_depth_north)] <- "N"
+JORN_trimmed_data$Litter_depth_east[is.na(JORN_trimmed_data$Litter_depth_east)] <- "N"
+JORN_trimmed_data$Litter_depth_south[is.na(JORN_trimmed_data$Litter_depth_south)] <- "N"
+JORN_trimmed_data$Litter_depth_west[is.na(JORN_trimmed_data$Litter_depth_west)] <- "N"
+
+```
+
+```{r JORN_clean_Nearby_canopy}
+
+# look at unique values for Nearby_canopy_1
+unique(JORN_trimmed_data$Nearby_canopy_1)
+
+# fix typos
+JORN_trimmed_data$Nearby_canopy_1[JORN_trimmed_data$Nearby_canopy_1 == "L-PRGL_DUNE"] <- "L-PRGL_dune"
+JORN_trimmed_data$Nearby_canopy_1[JORN_trimmed_data$Nearby_canopy_1 == "L-PRGLE_80SE_20H_40L_30P"] <- "L-PRGL_80SE_20H_40L_30P"
+JORN_trimmed_data$Nearby_canopy_1[JORN_trimmed_data$Nearby_canopy_1 == "L-PRGLE_patch_NW"] <- "L-PRGL_patch_NW"
+
+# look at unique values for Nearby_canopy_2
+unique(JORN_trimmed_data$Nearby_canopy_2)
+
+# fix typos
+JORN_trimmed_data$Nearby_canopy_2[JORN_trimmed_data$Nearby_canopy_2 == "L-PRGLE_25SE_45H_110L_100P"] <- "L-PRGL_25SE_45H_110L_100P"
+
+# look at unique values for Nearby_canopy_3
+unique(JORN_trimmed_data$Nearby_canopy_3)
+
+# look at unique values for Nearby_canopy_4
+unique(JORN_trimmed_data$Nearby_canopy_4)
+
+# look at unique values for Nearby_canopy_5
+unique(JORN_trimmed_data$Nearby_canopy_5)
+
+```
+
+### Level 2 Data
+
+```{r save_JORN_L2}
+
+# write a csv file of the L2 transect data, save it locally, then upload it to the appropriate Dropbox folder
+write.csv(JORN_trimmed_data, "/Users/AlexiBesser/Desktop/JORN_LPI_L2_Spring_2025_Data.csv")
+
+```
+
+### Transect Locations
+
+```{r JORN_transect_locations}
+
+JORN_Spring_2025_Transect_Locations <- JORN_trimmed_data %>%
+  filter(Remarks == 25) %>%
+  select(Transect, Latitude, Longitude, Elevation)
+
+```
+
+### Quadrat Sample Log
+
+```{r quadrat_sample_log}
+
+JORN_quad_samp_log <- JORN_trimmed_data %>%
+  select(BagID, Transect, Remarks, Litter, Litter_other, Litter_depth_center,
+         Litter_depth_north, Litter_depth_east, Litter_depth_south,
+         Litter_depth_west, Nearby_canopy_1, Nearby_canopy_2, Nearby_canopy_3,
+         Nearby_canopy_4, Nearby_canopy_5)
+
+JORN_quad_samp_log <- JORN_quad_samp_log[!(is.na(JORN_quad_samp_log$BagID)),]
+
+JORN_NA_quad_samp_log <- JORN_NA_quadrats %>%
+  select(BagID, Transect, Remarks, Litter, Litter_other, Litter_depth_center,
+         Litter_depth_north, Litter_depth_east, Litter_depth_south,
+         Litter_depth_west, Nearby_canopy_1, Nearby_canopy_2, Nearby_canopy_3,
+         Nearby_canopy_4, Nearby_canopy_5)
+
+JORN_quad_samp_log <- rbind(JORN_quad_samp_log, JORN_NA_quad_samp_log)
+
+write.csv(JORN_quad_samp_log, "JORN_Litter_Quadrat_Sample_Log_Spring_2025.csv", row.names = FALSE)
+
+```
+
+# MOAB
+
+## 15- 2025
+
+**Personnel:** Alexi Besser, Isabel Torres, Dellena Bloom, Allelua Niyokwizera, Heather Throop, Alex Cueva
+
+**Brief Description of Modified LPI Protocol:** Transects ran S to N and were read on the W side. A pin flag was dropped every 1 m along the transect. All vegetation layers (including canopies) intersecting this pin were noted as dead or living and were recorded to species if known and life-form if not. The top layer height (cm), soil surface texture, litter type(s), litter depth (mm), and microsite were also recorded. A SparkFun RTK Express GNSS was used to record the location of each transect point.
+
+50 m transects: MOAB104, MOAB106, MOAB114, MOAB116, MOAB118, MOAB119, MOAB122, MOAB126, MOAB127, MOAB135, MOAB147, MOAB148, MOAB149
+
+50 m transects with quadrats every 5 m (50 m, 45 m, 40 m, 35 m, 30 m, 25 m, 20 m, 15 m, 10 m, 5 m): MOAB103, MOAB105, MOAB107, MOAB111, MOAB128, MOAB131, MOAB137, MOAB150
+
+### Levels 0 and 1 Data
+
+```{r MOAB}
+
+### LEVEL 0 DATA ###
+
+# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
+MOAB_L0_Dropbox_folder <- "https://www.dropbox.com/scl/fo/r11axu2km65ein82yr71i/ANi_MnnRHHhEYmnwgjDYEQw?rlkey=t043n6k9zhqew2xgk3kig0ocr&st=riw2t9qn&dl=1"
+
+# specify the local folder containing the downloaded L0 transect data
+setwd("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
+MOAB_L0_data_files <- dir("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
+
+
+### LEVEL 1 DATA ###
+
+# read in L0 csv files and create a new column for transect ID
+MOAB_L1_data <- read_csv(MOAB_L0_data_files, id = "Transect") %>%
+  mutate(Transect = str_remove_all(Transect, ".csv")) %>%
+  mutate(Transect = str_remove_all(Transect, "_1")) %>%
+  mutate(Transect = str_remove_all(Transect, "_2"))
+
+```
+
+There is now 1 csv file containing data for all 21 transects. This is considered level 1 data.
+
+**L1 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> MOAB \> Transect_LPI_Data \> Level_1 \> Spring_2025 \> csv_file
+
+```{r read_MOAB_L1}
+
+# read in L1 transect data
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+#SRER_L1_data <- read.csv("")
+
+```
+
+### Clean Level 1 Data
+
+Investigate and rectify duplicate rows.
+
+```{r MOAB_merge_duplicates}
+
+# create a data frame for duplicate points 
+MOAB_duplicate_points <- MOAB_L1_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() 
+
+# there are 121 rows of duplicate points
+MOAB_trimmed_data <- MOAB_L1_data
+
+# need to finish this because it's overwhelming... is there a for loop or something similar that could work?
+
+# duplicate points for transects MOAB119 and MOAB147 were caused by using the Bad Elf GPS - we need to copy and paste GPS coordinates from the row for the SparkFun into the row for the Bad Elf (actual LPI data)
+# MOAB119 (1)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "1" & MOAB_trimmed_data$ID == "1", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "1"& MOAB_trimmed_data$ID == "54", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "1" & MOAB_trimmed_data$ID == "54"),] 
+
+# MOAB119 (2)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "2" & MOAB_trimmed_data$ID == "2", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "2"& MOAB_trimmed_data$ID == "53", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "2" & MOAB_trimmed_data$ID == "53"),] 
+
+# MOAB119 (3)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "3" & MOAB_trimmed_data$ID == "6", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "3"& MOAB_trimmed_data$ID == "52", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "3" & MOAB_trimmed_data$ID == "52"),] 
+
+# MOAB119 (4)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "4" & MOAB_trimmed_data$ID == "7", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "4"& MOAB_trimmed_data$ID == "51", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "4" & MOAB_trimmed_data$ID == "51"),] 
+
+# MOAB119 (5)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "5" & MOAB_trimmed_data$ID == "5", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "5"& MOAB_trimmed_data$ID == "50", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "5" & MOAB_trimmed_data$ID == "50"),] 
+
+# MOAB119 (6)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "6" & MOAB_trimmed_data$ID == "8", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "6"& MOAB_trimmed_data$ID == "49", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "6" & MOAB_trimmed_data$ID == "49"),] 
+
+# MOAB119 (7)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "7" & MOAB_trimmed_data$ID == "9", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "7"& MOAB_trimmed_data$ID == "48", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "7" & MOAB_trimmed_data$ID == "48"),] 
+
+# MOAB119 (8)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "8" & MOAB_trimmed_data$ID == "10", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "8"& MOAB_trimmed_data$ID == "47", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "8" & MOAB_trimmed_data$ID == "47"),] 
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "8" & MOAB_trimmed_data$ID == "46"),]
+
+# MOAB119 (9)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "11", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9"& MOAB_trimmed_data$ID == "45", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "45"),] 
+
+# MOAB119 (10)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "12", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10"& MOAB_trimmed_data$ID == "44", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "44"),] 
+
+# MOAB119 (11)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "11", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9"& MOAB_trimmed_data$ID == "45", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "45"),] 
+
+# MOAB119 (12)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "12", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10"& MOAB_trimmed_data$ID == "44", 4:18]
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "44"),]
+
+```
+
+Look at unique *Remarks*. Remove rows that are not points on transects but rather notes at the end of transects and rows with "NA" in every column.
+
+```{r MOAB_clean_Remarks}
+
+# extract and review unique Remarks
+unique(MOAB_trimmed_data$Remarks)
+
+# there is a "111" and a "118"
+
+# "118" should be "18"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB118" & MOAB_trimmed_data$ID == "18", "Remarks"] <- 18
+
+# I think "111" should be "1"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB111" & MOAB_trimmed_data$ID == "13", "Remarks"] <- 1
+
+```
+
+There are now 1,XXX rows in the trimmed data frame! 21 transects x 50 points per transect = 1,050 data points, so this makes sense, but double-check that there are 50 rows for every transect.
+
+```{r MOAB_check_rows_per_transect}
+
+# create a character string of the transects
+MOAB_Transects <- unique(MOAB_trimmed_data$Transect)
+
+# create an empty list for the number of rows per transect
+MOAB_rows_per_transect <- list()
+
+# run a for loop to count the number of rows per transect
+for (i in MOAB_Transects) {
+  MOAB_rows_per_transect[[i]] <- sum(MOAB_trimmed_data$Transect == i)
+  cat("Transect:", i, "- Rows:", MOAB_rows_per_transect[[i]], "\n")
+}
+
+```
+
+Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
+
+```{r MOAB_clean_Top_layer}
+
+# create a data frame for rows with an "NA" for Top_layer
+MOAB_NA_Top_layer <- subset(MOAB_trimmed_data, is.na(Top_layer))
+
+# there are 7 rows that have an "NA" for Top_layer
+
+# all of these rows have "N" for lower layers, "OPEN" for Microsite, and 0 for Top_height, so we will assume their Top_layer should be "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB111" & MOAB_trimmed_data$ID == "33", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB114" & MOAB_trimmed_data$ID == "22", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB116" & MOAB_trimmed_data$ID == "17", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "12", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "6", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "21", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB149" & MOAB_trimmed_data$ID == "5", "Top_layer"] <- "N"
+
+# look at unique values for Top_layer_other
+unique(MOAB_trimmed_data$Top_layer_other)
+
+# no typos
+
+```
+
+```{r MOAB_clean_Lower_1}
+
+# create a data frame for rows with an "NA" for Lower_1
+MOAB_NA_Lower_1 <- subset(MOAB_trimmed_data, is.na(Lower_1))
+
+# look at unique values for Lower_1_other
+unique(MOAB_trimmed_data$Lower_1_other)
+
+# no typos
+
+```
+
+```{r MOAB_clean_Lower_2}
+
+# create a data frame for rows with an "NA" for Lower_2
+MOAB_NA_Lower_2 <- subset(MOAB_trimmed_data, is.na(Lower_2))
+
+# look at unique values for Lower_2_other
+unique(MOAB_trimmed_data$Lower_2_other)
+
+# no typos
+
+```
+
+```{r MOAB_clean_Lower_3}
+
+# create a data frame for rows with an "NA" for Lower_3
+MOAB_NA_Lower_3 <- subset(MOAB_trimmed_data, is.na(Lower_3))
+
+# look at unique values for Lower_3_other
+unique(MOAB_trimmed_data$Lower_3_other)
+
+# no typos
+
+```
+
+```{r MOAB_clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+MOAB_NA_Soil_surface <- subset(MOAB_trimmed_data, is.na(Soil_surface))
+
+# there are 3 rows that have an "NA" for Soil_surface
+
+# all points along the transect for one of these points have "SOIL" for Soil_surface, so we will go ahead and assume this point should have "SOIL" as well
+# the other two points are from the same transect, the point in the middle of them has "BURROW" for Soil_surface, but the vast majority of the other points have "SOIL", so we will go ahead and assume this point should have "SOIL" as well
+JORN_trimmed_data$Soil_surface[is.na(JORN_trimmed_data$Soil_surface)] <- "SOIL"
+
+# look at unique values for Soil_surface_other
+unique(MOAB_trimmed_data$Soil_surface_other)
+
+# fix typos
+
+# "MOSE" should probably be "MOSS"
+MOAB_trimmed_data$Soil_surface_other[MOAB_trimmed_data$Soil_surface_other == "MOSE"] <- "MOSS"
+
+```
+
+```{r ONAQ}
+
+### LEVEL 0 DATA ###
+
+# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
+ONAQ_L0_Dropbox_folder <- 
+
+# specify the local folder containing the downloaded L0 transect data
+setwd("/Users/AlexiBesser/Downloads/csv_files-3")
+ONAQ_L0_data_files <- dir("/Users/AlexiBesser/Downloads/csv_files-3")
+
+
+### LEVEL 1 DATA ###
+
+# read in L0 csv files and create a new column for transect ID
+ONAQ_L1_data <- read_csv(ONAQ_L0_data_files, id = "Transect") %>%
+   mutate(Transect = str_remove_all(Transect, ".csv"))
+
+```
+
+```{r}
+
+Spring_2025_Transect_Locations <- rbind(SRER_Spring_2025_Transect_Locations, JORN_Spring_2025_Transect_Locations, MOAB_Spring_2025_Transect_Locations, ONAQ_Spring_2025_Transect_Locations)
+
+write.csv(Spring_2025_Transect_Locations, "Spring_2025_Transect_Locations.csv", row.names = FALSE)
+```

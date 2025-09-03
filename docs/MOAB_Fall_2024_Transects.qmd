@@ -23,6 +23,7 @@ library(plyr)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(ggpmisc)
 
 ```
 
@@ -64,6 +65,8 @@ MOAB_all_data <- rbind(MOAB_iPad_data, MOAB_Tablet_data)
 
 # write a csv file of the compiled (Level 1) data
 write.csv(MOAB_all_data, "~/Desktop/MOAB_LPI_L1_Fall_2024_Data.csv")
+
+MOAB_2024 <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L1_Fall_2024_Data.csv")
 
 ```
 
@@ -249,7 +252,7 @@ TopLayerPlot
 
 # first, get counts, proportions, and percentages of each Top_layer_other category per transect
 TopLayerOther <- MOAB_trimmed_data %>%
-  group_by(Top_layer_other) %>%
+  group_by(Top_layer_other, Transect) %>%
   dplyr::summarize(count = n(), .groups = "drop") %>%
   dplyr::mutate(proportion = count / sum(count)) %>%
   dplyr::mutate(percent = proportion*100)
@@ -288,6 +291,165 @@ TopLayerOtherPlot
 
 ```{r}
 
+# create a new column and paste the value from the Top_layer column in it
+MOAB_trimmed_data$Top_Plotting <- MOAB_trimmed_data$Top_layer
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "BOGR" paste "L-PGRASS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ACAN" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "GUSA" paste "L-SUBS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "GUSA" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ARTR" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ARTR" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "JUOS" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "JUOS" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "EPTO" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "EPTO" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "EPVI" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "EPVI" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PI" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "PI" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ACHY" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ACHY" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-PGRASS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "KRLA" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "KRLA" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SATR" paste "L-FORB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "SATR" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-FORB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SAVE" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "SAVE" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+```
+
+```{r}
+
+# calculate mean elevation per site
+MeanElev <- MOAB_trimmed_data %>%
+  group_by(Transect) %>%
+  dplyr::summarize(Mean.Elevation = mean(Elevation))
+
+MeanElev <- MeanElev[order(MeanElev$Mean.Elevation), ]
+
+MeanElev$Mean.Elevation <- factor(MeanElev$Mean.Elevation, levels = unique(MeanElev$Mean.Elevation))
+
+elevation.order <- as.list(MeanElev$Transect)
+
+print(elevation.order)
+
+```
+
+```{r}
+
+# look at unique values for Litter_other
+Litter_other <- unique(MOAB_trimmed_data$Litter_other)
+print(Litter_other)
+
+# Make a new column
+MOAB_trimmed_data$Litter_Plotting <- MOAB_trimmed_data$Litter
+
+# if Litter_other is "H_W" paste "Nonwoody and Woody Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_W")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+# if Litter_other is "H_W_B" paste "Nonwoody and Woody Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_W_B")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+# if Litter_other is "H_B" paste "Nonwoody and Woody Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_W")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+```
+
+```{r}
+
+# first, get counts, proportions, and percentages of each top layer type per transect
+NewTopLayer <- MOAB_trimmed_data %>%
+  group_by(Top_Plotting, Transect) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+NewTopLayer$Transect <- factor(NewTopLayer$Transect, levels = elevation.order)
+
+# make a bar plot
+NewTopLayerPlot <- ggplot(NewTopLayer, aes(x = Transect, y = percent, fill = Top_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Transect (Low to High Elevation)", y = "Frequency (%)", fill = "Top Layer") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("burlywood4", "burlywood", "mediumpurple4",
+                               "coral4", "#D55E00", "#E69F00", "#009E73",
+                              "#0072B2", "cornsilk2", "darkgreen",
+                               "olivedrab3", "deepskyblue", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+NewTopLayerPlot
+
+ggsave("~/Desktop/MOAB_Top_Layer_Plot.pdf", NewTopLayerPlot, width = 10, height = 6)
 
 ```
 
@@ -384,7 +546,7 @@ SoilTopLayerPlot
 
 # first, get counts, proportions, and percentages of each litter type per transect
 LitterTransect <- MOAB_trimmed_data %>%
-  group_by(Litter, Transect) %>%
+  group_by(Litter_Plotting, Transect) %>%
   dplyr::summarize(totdepth_center = sum(Litter_depth_center),
                    totdepth_north = sum(Litter_depth_north),
                    totdepth_east = sum(Litter_depth_east),
@@ -395,13 +557,31 @@ LitterTransect <- MOAB_trimmed_data %>%
   dplyr::mutate(proportion = n / sum(n)) %>%
   dplyr::mutate(percent = proportion*100)
 
+LitterTransect$Litter_Plotting <- factor(LitterTransect$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
+
+LitterTransect$Transect <- factor(LitterTransect$Transect, levels = elevation.order)
+
 # make a bar plot
-LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litter)) +
+LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Transect", y = "Frequency (%)", fill = "Litter") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "#009E73", "burlywood4",
-                               "black", "#999999")) +
+ scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter")) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -419,6 +599,8 @@ LitterPlot <- ggplot(LitterTransect, aes(x = Transect, y = percent, fill = Litte
 
 LitterPlot
 
+ggsave("~/Desktop/MOAB_Litter_Freq_Transect_Plot.pdf", LitterPlot, width = 10, height = 6)
+
 ```
 
 ### Litter_depth Plot
@@ -429,17 +611,22 @@ Make plot that shows litter type and cumulative depth across transects.
 
 # make a bar plot
 LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth_center,
-                                           fill = Litter)) +
+                                           fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Transect", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter"))+
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1)) +
   theme(
@@ -456,6 +643,9 @@ LitterDepthPlot <- ggplot(LitterTransect, aes(x = Transect, y = totdepth_center,
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 LitterDepthPlot
+
+ggsave("~/Desktop/MOAB_Litter_Depth_Transects_Plot.pdf", LitterDepthPlot, width = 10, height = 6)
+
 
 ```
 
@@ -645,7 +835,7 @@ LitterTopPlot
 
 # first, calculate the mean, median, and cumulative litter depths by litter type and top layer
 LitterStatsTop <- MOAB_trimmed_data %>%
-  group_by(Litter, Top_layer) %>%
+  group_by(Litter_Plotting, Top_Plotting) %>%
   dplyr::summarize(mean_depth = mean(Litter_depth_center),
             median_depth = median(Litter_depth_center),
             depth = sum(Litter_depth_center),
@@ -654,12 +844,12 @@ LitterStatsTop <- MOAB_trimmed_data %>%
 
 # calculate the number of observations of each top layer
 TopFreq <- MOAB_trimmed_data %>%
-  group_by(Top_layer) %>%
+  group_by(Top_Plotting) %>%
   dplyr::summarize(nTop = n(), .groups = "drop") 
 
 # merge the TopFreq data frame with the LitterStatsTop data frame
 LitterStatsTopFreq <- LitterStatsTop %>%
-  left_join(TopFreq, by = c("Top_layer"))
+  left_join(TopFreq, by = c("Top_Plotting"))
 
 # calculate the total number of observations
 total_top_counts <- sum(LitterStatsTopFreq$n)
@@ -667,14 +857,14 @@ total_top_counts <- sum(LitterStatsTopFreq$n)
 # calculate an adjusted cumulative litter depth by litter type and top layer
 # this is calculated using the following formula: adjusted cumulative litter depth = total litter depth * (1 - the proportion of observations)
 adjusted_depths_top <- LitterStatsTopFreq %>%
-  group_by(Litter, Top_layer) %>%
+  group_by(Litter_Plotting, Top_Plotting) %>%
   dplyr::summarize(adjusted_depth_top = depth*(1-(n/total_top_counts)),
                                                .groups = "drop")
 
 # calculate a weighted cumulative litter depth by litter type and top layer
 # this is calculated using the following formula: weighted cumulative litter depth = total litter depth * (the proportion of observations)
 weighted_depths_top <- LitterStatsTopFreq %>%
-  group_by(Litter, Top_layer) %>%
+  group_by(Litter_Plotting, Top_Plotting) %>%
   dplyr::summarize(weighted_depth_top = depth*(n/total_top_counts), .groups = "drop")
 
 # calculate the maximum number of observtions per top layer
@@ -688,14 +878,14 @@ mean_depth_max_top <- max(LitterStatsTopFreq$mean_depth)
 
 # calculate the maximum sum of mean litter depths for a top layer category
 sum_mean_depth_max_top <- LitterStatsTopFreq %>%
-  group_by(Top_layer) %>%
+  group_by(Top_Plotting) %>%
   summarize(sum_mean_depth = sum(mean_depth)) %>%
   summarize(sum_mean_depth_max = max(sum_mean_depth)) %>%
   pull(sum_mean_depth_max)
 
 # calculate the maximum sum of cumulative litter depths for a top layer category
 sum_depth_top <- LitterStatsTopFreq %>%
-  group_by(Top_layer) %>%
+  group_by(Top_Plotting) %>%
   dplyr::summarize(sum_depth_top = sum(depth), .groups = "drop")
 sum_depth_max_top <- max(sum_depth_top$sum_depth_top)
 
@@ -704,8 +894,8 @@ sum_depth_max_top <- max(sum_depth_top$sum_depth_top)
 ```{r}
 
 # make a bar plot
-MeanLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_layer, y = mean_depth,
-                                                fill = Litter)) +
+MeanLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_Plotting, y = mean_depth,
+                                                fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Top Layer", y = "Mean Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
@@ -745,21 +935,25 @@ MeanLitterTopPlot
 ```{r}
 
 # make a bar plot
-CumulLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_layer, y = depth,
-                                                    fill = Litter)) +
+CumulLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_Plotting, y = depth,
+                                                    fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Top Layer", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
   geom_point(aes(y = nTop*(depth_max_top/top_freq_max), fill = "n"), size = 3, pch = 21,
              color = "black") +
-  scale_fill_manual(values = c("coral4", "burlywood", "#009E73", "burlywood4",
-                               "black", "#999999", "navy"), 
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
                     name = NULL, 
-                    breaks = c("DUNG", "LT-C", "LT-H", "LT-W", "NONE",
-                               "OTHER", "n"),
-                    labels = c("Dung", "Cactus Litter", "Nonwoody Litter",
-                               "Woody Litter", "No Litter", "Other Litter",
-                               "Count")) +
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter", "Count")) +
   scale_y_continuous(
     name = "Cumulative Litter Depth (mm)",
     limits = c(0, sum_depth_max_top),
@@ -782,13 +976,51 @@ CumulLitterTopPlot <- ggplot(LitterStatsTopFreq, aes(x = Top_layer, y = depth,
 
 CumulLitterTopPlot
 
+ggsave("~/Desktop/MOAB_Top_Layer_Cumulative_Litter.pdf", CumulLitterTopPlot, width = 10, height = 6)
+
+```
+
+```{r}
+
+TopMicro <- MOAB_trimmed_data %>%
+  group_by(Microsite, Top_Plotting) %>%
+  dplyr::summarize(count = n(), .groups = "drop")
+
+TopMicroPlot <- ggplot(TopMicro, aes(x = Microsite, y = count, fill = Top_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Microsite", y = "Number of Observations",
+       fill = "Top Layer") +
+  geom_point(size = 5, pch = 21, color = "black") +
+  scale_fill_manual(values = c("burlywood4", "#999999", "burlywood", "mediumpurple4",
+                               "coral4", "#D55E00", "#E69F00", "#009E73",
+                               "#CC79A7", "#0072B2", "cornsilk2", "darkgreen",
+                               "olivedrab3", "deepskyblue", "#000000")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+TopMicroPlot 
+
+ggsave("~/Desktop/MOAB_Top_Layer_v_Microsite.pdf", TopMicroPlot, width = 10, height = 6)
+
 ```
 
 ```{r calc_depth_stats_Microsite}
 
 # first, calculate the mean, median, and total litter depths and the number of observations across litter types and microsites
 LitterStatsMicro <- MOAB_trimmed_data %>%
-  group_by(Litter, Microsite) %>%
+  group_by(Litter_Plotting, Microsite) %>%
   dplyr::summarize(mean_depth = mean(Litter_depth_center),
             median_depth = median(Litter_depth_center),
             depth = sum(Litter_depth_center),
@@ -810,23 +1042,23 @@ total_mic_counts <- sum(LitterStatsMicroFreq$n)
 # calculate an adjusted cumulative litter depth by litter type and microsite
 # this is calculated using the following formula: adjusted cumulative litter depth = total litter depth * (1 - the proportion of observations)
 adjusted_depths_mic <- LitterStatsMicro %>%
-  group_by(Litter, Microsite) %>%
+  group_by(Litter_Plotting, Microsite) %>%
   dplyr::summarize(adjusted_depth_mic = depth*(1-(n/total_mic_counts)),
                                                .groups = "drop")
 
 # calculate a weighted cumulative litter depth by litter type and microsite
 # this is calculated using the following formula: weighted cumulative litter depth = total litter depth * (the proportion of observations)
 weighted_depths_mic <- LitterStatsMicro %>%
-  group_by(Litter, Microsite) %>%
+  group_by(Litter_Plotting, Microsite) %>%
   dplyr::summarize(weighted_depth_mic = depth*(n/total_mic_counts), .groups = "drop")
 
 # merge the adjusted_depths_mic data frame with the LitterStatsMicroFreq data frame 
 LitterStatsMicroFreq <- LitterStatsMicroFreq %>%
-  left_join(adjusted_depths_mic, by = c("Litter", "Microsite"))
+  left_join(adjusted_depths_mic, by = c("Litter_Plotting", "Microsite"))
 
 # merge the weighted_depths_mic data frame with the LitterStatsMicroFreq data frame
 LitterStatsMicroFreq <- LitterStatsMicroFreq %>%
-  left_join(weighted_depths_mic, by = c("Litter", "Microsite"))
+  left_join(weighted_depths_mic, by = c("Litter_Plotting", "Microsite"))
 
 # calculate the maximum sum of adjusted cumulative litter depths for a microsite
 depth_max_mic <- LitterStatsMicroFreq %>%
@@ -865,7 +1097,7 @@ mic_freq_max <- max(LitterStatsMicroFreq$nMic)
 # make a bar plot
 LitterMicroPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
                                                     y = depth,
-                                                    fill = Litter)) +
+                                                    fill = Litter_Plotting)) +
   guides(fill = guide_legend(title.position = "top")) +
   labs(x = "Microsite", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
@@ -1062,7 +1294,7 @@ WeightedLitterMicroObsPlot
 
 ## Litter Types and Depths Across Microsites
 
-```{r Litter_depth_Microsite}
+```{r}
 
 # look at unique values for Litter_other
 Litter_other <- unique(MOAB_trimmed_data$Litter_other)
@@ -1088,8 +1320,50 @@ for (i in 1:nrow(MOAB_trimmed_data)) {
 # if Litter_other is "H_B" paste "Nonwoody and Woody Litter"
 for (i in 1:nrow(MOAB_trimmed_data)) {
   if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
-      MOAB_trimmed_data$Litter_other[i] == "H_W")
+      MOAB_trimmed_data$Litter_other[i] == "H_B")
     {MOAB_trimmed_data$Litter_Plotting[i] <- "Nonwoody and Woody Litter"}
+}
+
+# if Litter_other is "B" paste "Woody Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "B")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Woody Litter"}
+}
+
+# if Litter_other is "W_B" paste "Woody Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "W_B")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Woody Litter"}
+}
+
+# if Litter_other is "H_W_DUNG" paste "Other Mixed Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_W_DUNG")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Other Mixed Litter"}
+}
+
+# if Litter_other is "H_DUNG" paste "Other Mixed Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_DUNG")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Other Mixed Litter"}
+}
+
+# if Litter_other is "H_L" paste "Other Mixed Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_L")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Other Mixed Litter"}
+}
+
+# if Litter_other is "H_W_C" paste "Nonwoody, Woody, and Cactus Litter"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Litter_other[i]) &&
+      MOAB_trimmed_data$Litter_other[i] == "H_W_C")
+    {MOAB_trimmed_data$Litter_Plotting[i] <- "Other Mixed Litter"}
 }
 
 # first, get counts, proportions, and percentages of each litter type per top layer category
@@ -1178,6 +1452,61 @@ ggsave("~/Desktop/MOAB_Microsite_Mean_Litter.pdf", LitterMicPlot, width = 10,
 
 ```{r}
 
+LitterStatsMicroFreq$Litter_Plotting <- factor(LitterStatsMicroFreq$Litter_Plotting,
+                                         levels = c("LT-H", "Nonwoody and Woody Litter",
+                                                    "Nonwoody and Cactus Litter",
+                                                    "Nonwoody, Woody, and Cactus Litter",
+                                                    "LT-C", "LT-W", "DUNG",
+                                                    "Other Mixed Litter", "NONE"))
+
+# make a bar plot
+CumulDepthMicroFreqPlot <- ggplot(LitterStatsMicroFreq, aes(x = Microsite,
+                                                           y = depth,
+                                                           fill = Litter_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Microsite", y = "Cumulative Litter Depth (mm)", fill = "Litter Type") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  geom_point(aes(y = nMic*(depth_max_mic/mic_freq_max), fill = "n"), size = 3, pch = 21, color = "black") +
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black", "navy"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE", "n"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter", "No Litter",
+                               "Count")) +
+  scale_y_continuous(
+    name = "Cumulative Litter Depth (mm)",
+    sec.axis = sec_axis(~ . * (mic_freq_max/depth_max_mic), 
+                        name = "Number of Observations")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=10),
+    axis.text.y = element_text(color="black", size=10),
+    legend.title = element_text(color="black", size=12),
+    legend.text = element_text(color="black", size=10),
+    legend.position = c(.8,.7),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+CumulDepthMicroFreqPlot
+
+ggsave("~/Desktop/MOAB_Microsite_Cumulative_Litter.pdf", CumulDepthMicroFreqPlot, width = 10, height = 6)
+
+```
+
+```{r}
+
 LitterTransect_all <- MOAB_trimmed_data %>%
   group_by(Transect) %>%
   dplyr::summarize(totdepth = sum(Litter_depth_center), n = n(), 
@@ -1209,5 +1538,60 @@ elev_depth <- ggplot(LitterTransect_all, aes(x = elev, y = totdepth)) +
     axis.ticks = element_line(color = "black", linewidth = 0.75))
 
 elev_depth
+
+ggsave("~/Desktop/MOAB_Litter_Depth_Transects_Elev_Corr.pdf", elev_depth, width = 10, height = 6)
+
+```
+
+```{r}
+
+# subset out just canopy and open microsites
+MOAB_canopy_open <- subset(MOAB_trimmed_data, Microsite %in% c("CANOPY", "OPEN"))
+
+
+MOAB_nonwoody_only <- subset(MOAB_canopy_open, Litter_Plotting %in% c("LT-H", "Nonwoody and Woody Litter"))
+
+LitterBoxPlot <- ggplot(MOAB_nonwoody_only, aes(x = Microsite,
+                                                y = Litter_depth_center,
+                                       fill = Litter_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Mean Litter Depth (mm)", fill = "Litter Type") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25) +
+  scale_fill_manual(values = c("#90E685", "#70B368", "#436B3E", "#324F2E",
+                               "burlywood", "burlywood4",
+                               "saddlebrown", "#999999", "black"),
+                    name = NULL, 
+                    breaks = c("LT-H", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "LT-C",
+                               "LT-W", "DUNG", "Other Mixed Litter", "NONE"),
+                    labels = c("Nonwoody Litter", "Nonwoody and Woody Litter",
+                               "Nonwoody and Cactus Litter",
+                               "Nonwoody, Woody, and Cactus Litter", "Cactus Litter",
+                               "Woody Litter", "Dung", "Other Mixed Litter",
+                               "No Litter")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = c(.7,.7),
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  ggtitle(label = "MOAB", subtitle = "November 2024") +
+  theme(plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12)) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+LitterBoxPlot
+
+ggsave("~/Desktop/MOAB_Microsite_Mean_Nonwood_Litter.pdf", LitterBoxPlot, width = 10,
+       height = 6)
 
 ```

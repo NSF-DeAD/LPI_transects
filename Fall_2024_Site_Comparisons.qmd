@@ -1,0 +1,297 @@
+---
+title: "Site Comparisons"
+format: html
+editor: visual
+---
+
+## Read in Level X Data
+
+```{r}
+
+SRER_L2 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+
+ONAQ_L2 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+
+JORN_L2 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Fall_2024_Data.csv")
+
+MOAB_L2 <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L2_Fall_2024_Data.csv")
+
+All_L2 <- rbind(SRER_L2, ONAQ_L2, JORN_L2, MOAB_L2)
+
+```
+
+```{r}
+
+MOAB_Transect <- MOAB_L2 %>%
+  group_by(Transect) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center), n = n(), 
+                   elev = mean(Elevation), .groups = "drop")
+
+MOAB_Transect$Site <- "MOAB"
+
+SRER_Transect <- SRER_L2 %>%
+  group_by(Transect) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth), n = n(), 
+                   elev = mean(Elevation), .groups = "drop")
+
+SRER_Transect$Site <- "SRER"
+
+ONAQ_Transect <- ONAQ_L2 %>%
+  group_by(Transect) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center), n = n(), 
+                   elev = mean(Elevation), .groups = "drop")
+
+ONAQ_Transect$Site <- "ONAQ"
+
+JORN_Transect <- JORN_L2 %>%
+  group_by(Transect) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center), n = n(), 
+                   elev = mean(Elevation), .groups = "drop")
+
+JORN_Transect$Site <- "JORN"
+
+All_Transect <- rbind(SRER_Transect, MOAB_Transect, ONAQ_Transect, JORN_Transect)
+
+elev_lm <- lm(totdepth ~ elev, data = All_Transect)
+summary(elev_lm)
+
+elev_depth <- ggplot(All_Transect, aes(x = elev, y = totdepth, color = Site)) +
+  geom_point(pch = 19, size = 5) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  stat_poly_eq(use_label("eq", "R2", "P"), formula = y ~ x) +
+  #stat_poly_eq(use_label("R2", "P"), formula = y ~ x, label.y = 0.9) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Elevation (m)", y = "Litter Depth (mm)", fill = "Litter Type") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_text(color="black", size=14),
+    axis.text.y = element_text(color="black", size=14),
+    legend.title = element_text(color="black", size=14),
+    legend.text = element_text(color="black", size=14),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=16),
+    axis.title.y = element_text(color="black", size=16, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+elev_depth
+
+ggsave("~/Desktop/Litter_Depth_Transects_Elev_Corr.pdf", elev_depth, width = 10, height = 6)
+
+```
+
+```{r}
+
+# first, get counts, proportions, and percentages of each litter type per top layer category
+MOAB_LitterMic <- MOAB_L2 %>%
+  group_by(Litter, Microsite) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth_center))/(n),
+                   .groups = "drop")
+
+MOAB_LitterMic$Site <- "MOAB"
+
+SRER_LitterMic <- SRER_L2 %>%
+  group_by(Litter, Microsite) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth))/(n),
+                   .groups = "drop")
+
+SRER_LitterMic$Site <- "SRER"
+
+ONAQ_LitterMic <- ONAQ_L2 %>%
+  group_by(Litter, Microsite) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth_center))/(n),
+                   .groups = "drop")
+
+ONAQ_LitterMic$Site <- "ONAQ"
+
+JORN_LitterMic <- JORN_L2 %>%
+  group_by(Litter, Microsite) %>%
+  dplyr::summarize(totdepth = sum(Litter_depth_center),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth_center))/(n),
+                   .groups = "drop")
+
+JORN_LitterMic$Site <- "JORN"
+
+LitterMic <- rbind(MOAB_LitterMic, SRER_LitterMic, JORN_LitterMic, ONAQ_LitterMic)
+
+```
+
+```{r}
+
+# subset out just canopy and open microsites
+MOAB_canopy_open <- subset(MOAB_L2, Microsite %in% c("CANOPY", "OPEN"))
+MOAB_nonwoody_only <- subset(MOAB_canopy_open, Litter %in% c("LT-H"))
+
+MOAB_nonwoody_only$Site <- "MOAB"
+MOAB_nonwoody_only <- subset.data.frame(MOAB_nonwoody_only, select = c("Microsite", "Top_layer", "Site", "Litter_depth_center"))
+colnames(MOAB_nonwoody_only) <- c("Microsite", "Top_Layer", "Site", "Litter_depth")
+
+SRER_canopy_open <- subset(SRER_L2, Microsite %in% c("CANOPY", "OPEN"))
+SRER_nonwoody_only <- subset(SRER_canopy_open, Litter %in% c("LT-H"))
+
+SRER_nonwoody_only$Site <- "SRER"
+SRER_nonwoody_only <- subset.data.frame(SRER_nonwoody_only, select = c("Microsite", "Top_layer", "Site", "Litter_depth"))
+colnames(SRER_nonwoody_only) <- c("Microsite", "Top_Layer", "Site", "Litter_depth")
+
+ONAQ_canopy_open <- subset(ONAQ_L2, Microsite %in% c("CANOPY", "OPEN"))
+ONAQ_nonwoody_only <- subset(ONAQ_canopy_open, Litter %in% c("LT-H"))
+
+ONAQ_nonwoody_only$Site <- "ONAQ"
+ONAQ_nonwoody_only <- subset.data.frame(ONAQ_nonwoody_only, select = c("Microsite", "Top_layer", "Site", "Litter_depth_center"))
+colnames(ONAQ_nonwoody_only) <- c("Microsite", "Top_Layer", "Site", "Litter_depth")
+
+JORN_canopy_open <- subset(JORN_L2, Microsite %in% c("CANOPY", "OPEN"))
+JORN_nonwoody_only <- subset(JORN_canopy_open, Litter %in% c("LT-H"))
+
+JORN_nonwoody_only$Site <- "JORN"
+JORN_nonwoody_only <- subset.data.frame(JORN_nonwoody_only, select = c("Microsite", "Top_layer", "Site", "Litter_depth_center"))
+colnames(JORN_nonwoody_only) <- c("Microsite", "Top_Layer", "Site", "Litter_depth")
+
+nonwoody_only <- rbind(MOAB_nonwoody_only, SRER_nonwoody_only, ONAQ_nonwoody_only, JORN_nonwoody_only)
+
+
+LitterBoxPlot <- ggplot(nonwoody_only, aes(x = Microsite, y = Litter_depth, fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Mean Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = c(.7,.7),
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+LitterBoxPlot
+
+ggsave("~/Desktop/Nonwoody_Litter_Microsites.pdf", LitterBoxPlot, width = 10, height = 6)
+
+
+MOAB_top_layer <- subset.data.frame(MOAB_trimmed_data, select = c("Microsite", "Litter", "Top_Plotting", "Litter_depth_center"))
+MOAB_top_layer$Site <- "MOAB"
+
+colnames(MOAB_top_layer) <- c("Microsite", "Litter", "Top_Layer", "Litter_depth", "Site")
+
+JORN_top_layer <- subset.data.frame(JORN_trimmed_data, select = c("Microsite", "Litter", "Top_Plotting", "Litter_depth_center"))
+JORN_top_layer$Site <- "JORN"
+
+colnames(JORN_top_layer) <- c("Microsite", "Litter", "Top_Layer", "Litter_depth", "Site")
+
+SRER_top_layer <- subset.data.frame(SRER_trimmed_data, select = c("Microsite", "Litter", "Top_Plotting", "Litter_depth"))
+SRER_top_layer$Site <- "SRER"
+
+colnames(SRER_top_layer) <- c("Microsite", "Litter", "Top_Layer", "Litter_depth", "Site")
+
+ONAQ_top_layer <- subset.data.frame(ONAQ_trimmed_data, select = c("Microsite", "Litter", "Top_Plotting", "Litter_depth_center"))
+ONAQ_top_layer$Site <- "ONAQ"
+
+colnames(ONAQ_top_layer) <- c("Microsite", "Litter", "Top_Layer", "Litter_depth", "Site")
+
+top_layer_df <- rbind(MOAB_top_layer, SRER_top_layer, JORN_top_layer, ONAQ_top_layer)
+
+top_layer_litter_sums <- top_layer_df %>%
+  group_by(Top_Layer) %>%
+  summarize(totdepth = sum(Litter_depth),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth))/(n),
+                   .groups = "drop")
+
+top_layer_df_sub <- subset(top_layer_df, Top_Layer %in% c("D-FORB", "D-OTHER", "D-PGRASS", "L-OTHER", "L-PGRASS", "L-SHRUB", "NONE"))
+
+TopLayerLitterBoxPlot <- ggplot(top_layer_df_sub, aes(x = Top_Layer, y = Litter_depth, fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Mean Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, face = "bold", angle = 45),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = "right",
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+TopLayerLitterBoxPlot
+
+ggsave("~/Desktop/Litter_Top_Layer.pdf", TopLayerLitterBoxPlot, width = 10, height = 6)
+
+top_layer_nonwoody <- subset(top_layer_df, Litter %in% c("LT-H"))
+
+top_layer_nonwoody_sums <- top_layer_nonwoody %>%
+  group_by(Top_Layer) %>%
+  summarize(totdepth = sum(Litter_depth),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth))/(n),
+                   .groups = "drop")
+
+top_layer_nonwoody_site <- top_layer_nonwoody %>%
+  group_by(Top_Layer, Site) %>%
+  summarize(totdepth = sum(Litter_depth),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth))/(n),
+                   .groups = "drop")
+
+top_layer_nonwoody_sub <- subset(top_layer_nonwoody, Top_Layer %in% c("D-FORB", "D-OTHER", "D-PGRASS", "L-OTHER", "L-PGRASS", "L-SHRUB", "NONE"))
+
+TopLayerNWLitterBoxPlot <- ggplot(top_layer_nonwoody_sub, aes(x = Top_Layer, y = Litter_depth, fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Mean Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, face = "bold", angle = 45),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = "right",
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+TopLayerNWLitterBoxPlot
+
+ggsave("~/Desktop/NW_Litter_Top_Layer.pdf", TopLayerNWLitterBoxPlot, width = 10, height = 6)
+
+
+```
+
+```{r}
+
+top_layer_df_sums <- top_layer_df %>%
+  group_by(Microsite) %>%
+  summarize(n = n(),
+            .groups = "drop")
+
+
+  
+```
