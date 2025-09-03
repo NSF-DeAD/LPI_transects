@@ -798,7 +798,7 @@ setwd("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
 MOAB_L0_data_files <- dir("/Users/AlexiBesser/Downloads/MOAB_LPI_L0_Spring_2025_csv_files")
 
 # Dellena
-MOAB_L0_data_files <- dir("Spring_2025/csv_files/")
+# MOAB_L0_data_files <- dir("Spring_2025/csv_files/")
 
 ### LEVEL 1 DATA ###
 
@@ -835,12 +835,26 @@ MOAB_duplicate_points <- MOAB_L1_data %>%
   filter(n() > 1) %>%
   ungroup()
 
+# there are 121 rows of duplicate points
+# MOAB103 (45): 2 rows with "45" for Remarks column ("6" and "37" in ID column). One of these was a typo and should be "15"
+MOAB_trimmed_data <- MOAB_L1_data
+  
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB103" & MOAB_trimmed_data$ID == "37", "Remarks"] <- 15
+
+MOAB_duplicate_points <- MOAB_duplicate_points[!(MOAB_duplicate_points$Transect=="MOAB103"),]
+
+# MOAB135 (38): 2 rows with "38" for Remarks column ("13" and "15" in ID column). One of these was a typo and should be "36"
+MOAB_trimmed_data <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "15", "Remarks"] <- 36
+
+MOAB_duplicate_points <- MOAB_duplicate_points[!(MOAB_duplicate_points$Transect=="MOAB135"),]
+
+
+# Dellena's work
 MOAB_satellite <- MOAB_duplicate_points %>%
   filter(`Instrument Ht` == 1.74) %>%
   select(-c(Top_layer:Quadrat_checklist))
 
-# there are 121 rows of duplicate points
-MOAB_trimmed_data <- MOAB_L1_data
+
 
 # need to finish this because it's overwhelming... is there a for loop or something similar that could work?
 
