@@ -1,0 +1,21 @@
+---
+title: "Figures for RISE Posters"
+format: html
+editor: visual
+---
+
+## Read in Fall 2024 L2 Data
+
+```{r}
+
+SRER_2024 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+ONAQ_2024 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+JORN_2024 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Fall_2024_Data.csv")
+MOAB_2024 <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L2_Fall_2024_Data.csv")
+
+SRER_2025 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Spring_2025_Data.csv")
+ONAQ_2025 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Spring_2025_Data.csv")
+JORN_2025 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Spring_2025_Data.csv")
+MOAB_2025 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Spring_2025_Data.csv")
+
+```

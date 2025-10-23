@@ -489,6 +489,7 @@ Create a new column for plotting the top layer - so we can group "L-OTHER" and "
 
 ```{r Top_Plotting_col}
 
+
 # create a new column and paste the value from the Top_layer column in it
 SRER_trimmed_data$Top_Plotting <- SRER_trimmed_data$Top_layer
 

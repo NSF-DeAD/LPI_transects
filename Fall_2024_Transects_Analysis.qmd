@@ -1,0 +1,707 @@
+---
+title: "Fall 2024 Data Analysis"
+author: "Alexi C. Besser"
+format: html
+editor: visual
+---
+
+## Data Frames
+
+To use for now...
+
+SRER_2024
+
+ONAQ_2024
+
+JORN_2024
+
+MOAB_trimmed_data
+
+```{r SRER_top_plotting}
+
+SRER_trimmed_data <- SRER_2024
+
+# create a new column and paste the value from the Top_layer column in it
+SRER_trimmed_data$Top_Plotting <- SRER_trimmed_data$Top_layer
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ACAN" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "ACAN" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "ACAN" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "ACAN" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "CAER" paste "L-SUBS"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CAER" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "CAER" paste "D-SUBS"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CAER" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "CAGI" paste "L-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CAGI" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-CACT"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "CAGI" paste "D-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CAGI" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-CACT"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "CEPA" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CEPA" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "CEPA" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CEPA" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "CY" paste "L-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CY" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-CACT"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "CY" paste "D-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "CY" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-CACT"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "FEWI" paste "L-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "FEWI" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-CACT"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "FEWI" paste "D-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "FEWI" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-CACT"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "FOSP" paste "L-FOSP"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "FOSP" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-OTHER"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "FOSP" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "FOSP" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-OTHER"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "GUSA" paste "L-SUBS"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "GUSA" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "GUSA" paste "D-SUBS"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "GUSA" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ISTE" paste "L-SUBS"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "ISTE" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "ISTE" paste "D-SUBS"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "ISTE" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "LATR" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "LATR" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "LATR" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "LATR" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "OP" paste "L-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "OP" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-CACT"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "OP" paste "D-CACT"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "OP" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-CACT"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PAFL" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "PAFL" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "PAFL" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "PAFL" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PRVE" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "PRVE" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "PRVE" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "PRVE" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SEGR" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "SEGR" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "SEGR" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "SEGR" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "YUEL" paste "L-YUEL"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "YUEL" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-YUEL"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "EPIP" paste "L-EPIPHYTE"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "EPIP" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-EPIPHYTE"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "YUEL" paste "D-YUEL"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "YUEL" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-YUEL"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ANTH" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "ANTH" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "ANTH" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "ANTH" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "FOSP" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "FOSP" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "UNKNOWN" paste "L-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "UNKNOWN" && SRER_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "FOSP" paste "D-SHRUB"
+for (i in 1:nrow(SRER_trimmed_data)) {
+  if (!is.na(SRER_trimmed_data$Top_layer_other[i]) && SRER_trimmed_data$Top_layer_other[i] == "FOSP" && SRER_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    SRER_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Top_layer == "L-OTHER" & is.na(SRER_trimmed_data$Top_layer_other)), ]
+
+```
+
+```{r ONAQ_top_plotting}
+
+ONAQ_trimmed_data <- ONAQ_2024
+
+# create a new column and paste the value from the Top_layer column in it
+ONAQ_trimmed_data$Top_Plotting <- ONAQ_trimmed_data$Top_layer
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "GUSA" paste "L-SUBS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "GUSA" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ARTR" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "ARTR" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "JUOS" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "JUOS" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SAVE" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "SAVE" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SATR" paste "L-FORB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "SATR" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-FORB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "GUSA" paste "D-SUBS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "GUSA" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ARTR" paste "D-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "ARTR" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "ATCO" paste "D-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "ATCO" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "BRTE" paste "D-AGRASS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "BRTE" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-AGRASS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "AGCR" paste "D-PGRASS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "AGCR" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-PGRASS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "PSSP" paste "D-PGRASS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "PSSP" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-PGRASS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "SATR" paste "D-SUBS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "SATR" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "HAGL" paste "D-FORB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "HAGL" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-FORB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "SAVE" paste "D-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "SAVE" && ONAQ_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PUST" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "PUST" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ERNA" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "ERNA" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "AGCR" paste "L-PGRASS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "AGCR" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-PGRASS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PSSP" paste "L-PGRASS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "PSSP" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-PGRASS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ATCO" paste "L-SHRUB"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "ATCO" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "BRTE" paste "L-AGRASS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "BRTE" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-AGRASS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "UNK1" paste "L-SUBS"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "UNK1" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "OP" paste "L-CACT"
+for (i in 1:nrow(ONAQ_trimmed_data)) {
+  if (!is.na(ONAQ_trimmed_data$Top_layer_other[i]) && ONAQ_trimmed_data$Top_layer_other[i] == "OP" && ONAQ_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    ONAQ_trimmed_data$Top_Plotting[i] <- "L-CACT"}
+}
+
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Top_layer == "L-OTHER" & is.na(ONAQ_trimmed_data$Top_layer_other)), ]
+
+```
+
+```{r JORN_top_plotting}
+
+JORN_trimmed_data <- JORN_2024
+
+# create a new column and paste the value from the Top_layer column in it
+JORN_trimmed_data$Top_Plotting <- JORN_trimmed_data$Top_layer
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "EPTO" paste "L-SHRUB"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "EPTO" && JORN_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "GUSA" paste "L-SUBS"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "GUSA" && JORN_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PRGL" paste "L-SHRUB"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "PRGL" && JORN_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "YUEL" paste "L-SHRUB"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "YUEL" && JORN_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SOEL" paste "L-YUEL"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "SOEL" && JORN_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "PRGL" paste "D-SHRUB"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "PRGL" && JORN_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "YUEL" paste "D-SHRUB"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "YUEL" && JORN_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "EPTO" paste "D-SHRUB"
+for (i in 1:nrow(JORN_trimmed_data)) {
+  if (!is.na(JORN_trimmed_data$Top_layer_other[i]) && JORN_trimmed_data$Top_layer_other[i] == "EPTO" && JORN_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    JORN_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+```
+
+```{r MOAB_top_plotting}
+
+# create a new column and paste the value from the Top_layer column in it
+MOAB_trimmed_data$Top_Plotting <- MOAB_trimmed_data$Top_layer
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "BOGR" paste "L-PGRASS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ACAN" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "GUSA" paste "L-SUBS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "GUSA" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ARTR" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ARTR" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "JUOS" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "JUOS" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "EPTO" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "EPTO" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "EPVI" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "EPVI" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "PI" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "PI" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "ACHY" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ACHY" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-PGRASS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "KRLA" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "KRLA" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SATR" paste "L-SUBS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "SATR" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "SAVE" paste "L-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "SAVE" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "SATR" paste "D-SUBS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "SATR" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "SAVE" paste "D-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "SAVE" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "JUOS" paste "D-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "JUOS" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "PI" paste "D-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "PI" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "ARTR" paste "D-SHRUB"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "ARTR" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-SHRUB"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "BOGR" paste "D-PGRASS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "BOGR" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-PGRASS"}
+}
+
+# if Top_layer is "D-OTHER" and Top_layer_other is "GUSA" paste "D-SUBS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "GUSA" && MOAB_trimmed_data$Top_layer[i] == "D-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "D-SUBS"}
+}
+
+# if Top_layer is "L-OTHER" and Top_layer_other is "BOGR" paste "L-PGRASS"
+for (i in 1:nrow(MOAB_trimmed_data)) {
+  if (!is.na(MOAB_trimmed_data$Top_layer_other[i]) && MOAB_trimmed_data$Top_layer_other[i] == "BOGR" && MOAB_trimmed_data$Top_layer[i] == "L-OTHER" ) {
+    MOAB_trimmed_data$Top_Plotting[i] <- "L-PGRASS"}
+}
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Top_layer == "D-OTHER" & is.na(MOAB_trimmed_data$Top_layer_other)), ]
+
+```
+
+```{r}
+
+SRER_trimmed_data <- SRER_trimmed_data[, -(1:2)]
+ONAQ_trimmed_data <- ONAQ_trimmed_data[, -1]
+JORN_trimmed_data <- JORN_trimmed_data[, -1]
+
+SRER_trimmed_data$Site <- "SRER"
+colnames(SRER_trimmed_data)[colnames(SRER_trimmed_data) == "Litter_depth"] <- "Litter_depth_center"
+SRER_trimmed_data$Litter_depth_north <- NA
+SRER_trimmed_data$Litter_depth_east <- NA
+SRER_trimmed_data$Litter_depth_south <- NA
+SRER_trimmed_data$Litter_depth_west <- NA
+
+ONAQ_trimmed_data$Site <- "ONAQ"
+MOAB_trimmed_data$Site <- "MOAB"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Ortho Height"] <- "Ortho.Height"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Instrument Ht"] <- "Instrument.Ht"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Fix ID"] <- "Fix.ID"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Horizontal Accuracy"] <- "Horizontal.Accuracy"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Vertical Accuracy"] <- "Vertical.Accuracy"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Satellites in View"] <- "Satellites.in.View"
+colnames(MOAB_trimmed_data)[colnames(MOAB_trimmed_data) == "Satellites in Use"] <- "Satellites.in.Use"
+JORN_trimmed_data$Site <- "JORN"
+
+all_data <- rbind(SRER_trimmed_data, JORN_trimmed_data, ONAQ_trimmed_data, MOAB_trimmed_data)
+
+```
+
+```{r Top_layer_plot}
+
+# calculate mean elevation per site
+MeanElev <- all_data %>%
+  group_by(Transect) %>%
+  dplyr::summarize(Mean.Elevation = mean(Elevation))
+
+MeanElev <- MeanElev[order(MeanElev$Mean.Elevation), ]
+
+MeanElev$Mean.Elevation <- factor(MeanElev$Mean.Elevation, levels = unique(MeanElev$Mean.Elevation))
+
+elevation.order <- as.list(MeanElev$Transect)
+
+# first, get counts, proportions, and percentages of each top layer type per transect
+NewTopLayer <- all_data %>%
+  group_by(Top_Plotting, Transect, Site) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+NewTopLayer$Transect <- factor(NewTopLayer$Transect, levels = elevation.order)
+
+# make a bar plot
+NewTopLayerPlot <- ggplot(NewTopLayer,
+                          aes(x = Transect, y = percent, fill = Top_Plotting)) +
+  facet_wrap(~ Site, scales = "free_x") +
+  guides(fill = guide_legend(nrow = 2)) +
+  labs(x = "Transect (Low to High Elevation)", y = "Top Layer Frequency (%)",
+       fill = "Top Layer") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("cornsilk2", "#999999", "burlywood", "burlywood4",  
+                               "coral4", "#D55E00", "#E69F00", "deepskyblue",
+                               "#0072B2", "#CC79A7", "olivedrab3", "darkgreen",
+                               "#009E73", "#000000")) +
+  theme_linedraw() +
+  theme(axis.text.x=element_text(angle=45,hjust=1)) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(color="black", size=12),
+    legend.title = element_blank(),
+    legend.text = element_text(color="black", size=10),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks.y = element_line(color = "black", linewidth = 0.75),
+    axis.ticks.x = element_blank())
+
+NewTopLayerPlot
+
+ggsave("~/Desktop/Fall_2024_Top_Layer_Plots.pdf", NewTopLayerPlot, width = 14, height = 8)
+```
+
+```{r}
+
+top_layer <- subset.data.frame(all_data, select = c("Site", "Litter", "Top_Plotting", "Litter_depth_center"))
+
+top_layer_stats <- top_layer %>%
+  group_by(Top_Plotting) %>%
+  summarize(
+    zero_litter_depth_count = sum(Litter_depth_center == 0, na.rm = TRUE),
+    total_count = n(),
+    proportion_zero_litter_depth = zero_litter_depth_count / total_count
+  )
+
+
+top_layer_nonwoody <- subset(top_layer, Litter %in% c("LT-H"))
+
+top_layer_litter_sums <- top_layer_nonwoody %>%
+  group_by(Top_Plotting) %>%
+  summarize(totdepth = sum(Litter_depth_center),
+                   n = n(),
+                   mean_totdepth = (sum(Litter_depth_center))/(n),
+                   .groups = "drop")
+
+top_layer_litter_sub <- subset(top_layer_litter_sums, Top_Plotting %in% c("D-SHRUB", "D-AGRASS", "D-PGRASS", "D-FORB", "L-PGRASS", "L-SHRUB", "NONE"))
+
+top_layer_nonwoody_sub <- subset(top_layer_nonwoody, Top_Plotting %in% c("D-SHRUB", "D-AGRASS", "D-PGRASS", "D-FORB", "L-PGRASS", "L-SHRUB", "NONE"))
+
+TopLayerNWLitterBoxPlot <- ggplot(top_layer_nonwoody_sub, aes(x = Top_Plotting, y = Litter_depth_center, fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Nonwoody Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25) +
+  scale_fill_manual(values = c("darkgoldenrod", "sienna2", "darkseagreen3", "olivedrab")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, face = "bold", angle = 45),
+    axis.text.y = element_text(color = "black", size = 12),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 12),
+    legend.position = "bottom",
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+TopLayerNWLitterBoxPlot
+
+ggsave("~/Desktop/NW_Litter_Top_Layer.pdf", TopLayerNWLitterBoxPlot, width = 14, height = 8)
+
+```
