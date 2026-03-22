@@ -4,25 +4,41 @@ format: html
 editor: visual
 ---
 
-## Read in Fall 2024 L2 Data
+# README
 
-```{r}
+This code reads in level 2 (cleaned up) csv files containing modified line point-intercept (LPI) transect and litter quadrat data collected at the Santa Rita Experimental Range (SRER), Onaqui (ONAQ), Moab (MOAB), and Jornada Experimental Range (JORN) National Ecological Observatory Network (NEON) sites in Fall 2024 and Spring 2025. For more information, see README.md, Fall_2024_Transects_Data_Cleaning.qmd, and Spring_2025_Transects_Data_Cleaning.qmd.
+
+## Load Packages
+
+```{r setup}
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
 
 ```
 
-```{r}
+## Read in Fall 2024 L2 Data
 
+```{r import_L2}
+
+# read in Fall 2024 LPI data from SRER
 SRER_2024 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+# add a column for site and populate it with "SRER"
 SRER_2024$Site <- "SRER"
+# add a column for season and populate it with "F24"
 SRER_2024$Season <- "F24"
+# rename "Litter_depth" column to "Litter_depth_center" to match data column names from other sites that included 5 rather than just one litter depth measurement
 colnames(SRER_2024)[colnames(SRER_2024) == "Litter_depth"] <- "Litter_depth_center"
+
+# read in Fall 2024 LPI data from ONAQ
 ONAQ_2024 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+# add a column for site and populate it with "SRER"
 ONAQ_2024$Site <- "ONAQ"
+# add a column for season and populate it with "F24"
 ONAQ_2024$Season <- "F24"
+# rename remark for the 44 m mark on transect ...
 ONAQ_2024$Remarks[ONAQ_2024$Remarks == "44_sameJUOS_45-42"] <- "44"
+# make sure Remarks are numeric
 ONAQ_2024$Remarks <- as.numeric(ONAQ_2024$Remarks)
 
 JORN_2024 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Fall_2024_Data.csv")
@@ -70,6 +86,8 @@ Transect_locations <- prelim_all_data %>%
 # SRER_2025_L1 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L1_Spring_2025_Data.csv")
 
 quad_data <- rbind(SRER_2025, ONAQ_2025, MOAB_2025, JORN_2025)
+
+
 
 ```
 
