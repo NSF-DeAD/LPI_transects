@@ -12,7 +12,7 @@ editor: visual
 
 # README
 
-This code reads in individual csv files containing modified line point-intercept (LPI) + quadrat transect data collected at the Santa Rita Experimental Range (SRER), Onaqui (ONAQ), Moab (MOAB), and Jornada Experimental Range (JORN) National Ecological Observatory Network (NEON) sites in Spring 2025. GPS coordinates were taken using a SparkFun real-time kinematic (RTK) Express global navigation satellite system (GNSS) mounted to a 1.74 m monopole. Data for each transect were recorded in a unique project in the SW Maps Application on an iPad. Drop-down menus were used for primary fields and free-form text was used for "other" fields. Replicate data points and data points containing irreconcilable typos or other mistakes are removed in this code.
+This code reads in individual csv files containing modified line point-intercept (LPI) + quadrat transect data collected at the Santa Rita Experimental Range (SRER), Onaqui (ONAQ), Moab (MOAB), and Jornada Experimental Range (JORN) National Ecological Observatory Network (NEON) sites in Spring 2025. GPS coordinates were taken using a SparkFun real-time kinematic (RTK) Express global navigation satellite system (GNSS) mounted to a 1.74 m monopole. Data for each transect were recorded in a unique project in the SW Maps Application on an iPad. Drop-down menus were used for primary fields and free-form text was used for "other" fields. Replicate data points and data points containing irreconcilable typos or other mistakes are removed in this code. Detailed descriptions of data collection methods and variables are included for each site.
 
 A table of common plant codes can be found in the shared Google Drive and in ASU's LabArchives Notebook.
 
@@ -37,7 +37,9 @@ library(stringr)
 
 **Brief Description of Modified LPI Protocol:** Transects ran S to N and were read on the W side. A pin flag was dropped every 1 m along the transect. All vegetation layers (including canopies) intersecting this pin were noted as dead or living and were recorded to species if known and life-form if not. The top layer height (cm), soil surface texture, litter type(s), litter depth (mm), and microsite were also recorded. A SparkFun RTK Express GNSS was used to record the location of each transect point.
 
-50 m transects: SRER001, SRER018, SRER021, SRER026, SRER030, SRER034, SRER039, SRER041, SRER046, SRER050
+**Brief Description of Litter Quadrat Protocol:** A 10 x 10 cm quadrat guide was placed on the ground with the pin flag in the SE corner every 5 m along the transect (except for transect SRER041; see below). A photograph of the quadrat was taken using the "narrow" setting on a GoPro Hero 9 Black outfitted with the standard lens followed by a photograph of the canopy taken using the "wide" setting on GoPro Hero 9 Black outfitted with a fisheye lens. Litter depths (mm) were measured in the center and each corner of the quadrat. All surface litter was collected from the quadrat using gloved hands, forceps, and paint brushes + mini dustpan as needed. In the lab, quadrat litter was dried, sorted, and weighed (mg).
+
+50 m transects: SRER018, SRER021, SRER026, SRER034, SRER046
 
 50 m transect with quadrats at 1 m, 2 m, 3 m, 4 m, 5 m, 34 m, 37 m, 46 m, 47 m, 48 m, 49 m, 50 m: SRER041
 
@@ -566,7 +568,7 @@ unique(JORN_trimmed_data$Lower_1_other)
 # fix typos
 
 # "PRGO" appears once for transect JORN019 - this should just be "PRGL"
-JORN_trimmed_data$Lower_1_other[JORN_trimmed_data$Lower_1_other=="POGR"] <- "PRGL"
+JORN_trimmed_data$Lower_1_other[JORN_trimmed_data$Lower_1_other=="PRGO"] <- "PRGL"
 
 ```
 
@@ -620,6 +622,8 @@ unique(JORN_trimmed_data$Soil_surface_other)
 # no typos
 
 ```
+
+d
 
 ```{r JORN_clean_Microsite}
 
@@ -692,11 +696,11 @@ JORN_trimmed_data[JORN_trimmed_data$Transect=="JORN129" & JORN_trimmed_data$ID =
 
 # 1 row has "LT-W" for Litter and 1 has "B" for Litter_other, so these litter depth measurements should be 0
 # the remaining 17 rows have "N" for Litter
-JORN_trimmed_data$Litter_depth_center[is.na(JORN_trimmed_data$Litter_depth_center)] <- "N"
-JORN_trimmed_data$Litter_depth_north[is.na(JORN_trimmed_data$Litter_depth_north)] <- "N"
-JORN_trimmed_data$Litter_depth_east[is.na(JORN_trimmed_data$Litter_depth_east)] <- "N"
-JORN_trimmed_data$Litter_depth_south[is.na(JORN_trimmed_data$Litter_depth_south)] <- "N"
-JORN_trimmed_data$Litter_depth_west[is.na(JORN_trimmed_data$Litter_depth_west)] <- "N"
+JORN_trimmed_data$Litter_depth_center[is.na(JORN_trimmed_data$Litter_depth_center)] <- "0"
+JORN_trimmed_data$Litter_depth_north[is.na(JORN_trimmed_data$Litter_depth_north)] <- "0"
+JORN_trimmed_data$Litter_depth_east[is.na(JORN_trimmed_data$Litter_depth_east)] <- "0"
+JORN_trimmed_data$Litter_depth_south[is.na(JORN_trimmed_data$Litter_depth_south)] <- "0"
+JORN_trimmed_data$Litter_depth_west[is.na(JORN_trimmed_data$Litter_depth_west)] <- "0"
 
 ```
 
@@ -772,7 +776,7 @@ write.csv(JORN_quad_samp_log, "JORN_Litter_Quadrat_Sample_Log_Spring_2025.csv", 
 
 # MOAB
 
-## 15- 2025
+## 15-19 May 2025
 
 **Personnel:** Alexi Besser, Isabel Torres, Dellena Bloom, Allelua Niyokwizera, Heather Throop, Alex Cueva
 
@@ -851,7 +855,7 @@ MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB103" & MOAB_trimmed_data$ID =
 MOAB_duplicate_points <- MOAB_duplicate_points[!(MOAB_duplicate_points$Transect=="MOAB103"),]
 
 # MOAB135 (38): 2 rows with "38" for Remarks column ("13" and "15" in ID column). One of these was a typo and should be "36"
-MOAB_trimmed_data <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "15", "Remarks"] <- 36
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "15" & MOAB_trimmed_data$Remarks == "38", "Remarks"] <- 36
 
 MOAB_duplicate_points <- MOAB_duplicate_points[!(MOAB_duplicate_points$Transect=="MOAB135"),]
 
@@ -861,7 +865,6 @@ MOAB_duplicate_points <- MOAB_duplicate_points[!(MOAB_duplicate_points$Transect=
 # NOTE: T 103 remark 45 of the heights == 1.74 had writing that gets removed with first negative selection below, this also creates 2 ID columns, from both satellites and time columns, chose which you want or if you want to name them different things - denoted by .x and .y
 
 MOAB_dup_NAcols_removed <- MOAB_duplicate_points %>%
-  #filter(Remarks == 1) %>%
   filter(`Instrument Ht` == 1.74) %>%
   select(-c(Top_layer:Quadrat_checklist)) %>%
   merge(MOAB_duplicate_points %>%
@@ -869,69 +872,33 @@ MOAB_dup_NAcols_removed <- MOAB_duplicate_points %>%
     select(-c(Geometry:`Ortho Height`, `Fix ID`:`Satellites in Use`)), 
     by = c("Transect", "Remarks"))
 
-# need to finish this because it's overwhelming... is there a for loop or something similar that could work?
+colnames(MOAB_dup_NAcols_removed)[colnames(MOAB_dup_NAcols_removed) == "ID.x"] <- "ID"
 
-# duplicate points for transects MOAB119 and MOAB147 were caused by using the Bad Elf GPS - we need to copy and paste GPS coordinates from the row for the SparkFun into the row for the Bad Elf (actual LPI data)
-# MOAB119 (1)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "1" & MOAB_trimmed_data$ID == "1", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "1"& MOAB_trimmed_data$ID == "54", 4:18]
+colnames(MOAB_dup_NAcols_removed)[colnames(MOAB_dup_NAcols_removed) == "Time.x"] <- "Time"
 
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "1" & MOAB_trimmed_data$ID == "54"),] 
+colnames(MOAB_dup_NAcols_removed)[colnames(MOAB_dup_NAcols_removed) == "Instrument Ht.x"] <- "Instrument Ht"
 
-# MOAB119 (2)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "2" & MOAB_trimmed_data$ID == "2", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "2"& MOAB_trimmed_data$ID == "53", 4:18]
+MOAB_dup_NAcols_removed <- MOAB_dup_NAcols_removed %>%
+    select(-c("ID.y", "Time.y", "Instrument Ht.y"))
 
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "2" & MOAB_trimmed_data$ID == "53"),] 
+MOAB_trimmed_data <- MOAB_trimmed_data %>%
+  filter(!(`Instrument Ht` == 0))
 
-# MOAB119 (3)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "3" & MOAB_trimmed_data$ID == "6", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "3"& MOAB_trimmed_data$ID == "52", 4:18]
+MOAB_trimmed_data <- MOAB_trimmed_data %>%
+  anti_join(MOAB_dup_NAcols_removed, by = c("Transect", "Remarks")) %>%
+  bind_rows(MOAB_dup_NAcols_removed)
 
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "3" & MOAB_trimmed_data$ID == "52"),] 
+# create a data frame for duplicate points 
+MOAB_duplicate_points_check <- MOAB_trimmed_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup()
 
-# MOAB119 (4)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "4" & MOAB_trimmed_data$ID == "7", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "4"& MOAB_trimmed_data$ID == "51", 4:18]
+# MOAB119 (8): 2 rows with "8" for Remarks column ("46" and "47" in ID column). They are identical. Remove the first one.
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "46"),]
 
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "4" & MOAB_trimmed_data$ID == "51"),] 
-
-# MOAB119 (5)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "5" & MOAB_trimmed_data$ID == "5", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "5"& MOAB_trimmed_data$ID == "50", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "5" & MOAB_trimmed_data$ID == "50"),] 
-
-# MOAB119 (6)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "6" & MOAB_trimmed_data$ID == "8", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "6"& MOAB_trimmed_data$ID == "49", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "6" & MOAB_trimmed_data$ID == "49"),] 
-
-# MOAB119 (7)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "7" & MOAB_trimmed_data$ID == "9", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "7"& MOAB_trimmed_data$ID == "48", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "7" & MOAB_trimmed_data$ID == "48"),] 
-
-# MOAB119 (8)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "8" & MOAB_trimmed_data$ID == "10", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "8"& MOAB_trimmed_data$ID == "47", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "8" & MOAB_trimmed_data$ID == "47"),] 
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "8" & MOAB_trimmed_data$ID == "46"),]
-
-# MOAB119 (9)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "11", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9"& MOAB_trimmed_data$ID == "45", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "45"),] 
-
-# MOAB119 (10)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "12", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10"& MOAB_trimmed_data$ID == "44", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "44"),] 
-
-# MOAB119 (11)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "11", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9"& MOAB_trimmed_data$ID == "45", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "9" & MOAB_trimmed_data$ID == "45"),] 
-
-# MOAB119 (12)
-MOAB_trimmed_data[MOAB_trimmed_data$Transect == "MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "12", 4:18] <- MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10"& MOAB_trimmed_data$ID == "44", 4:18]
-
-MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "10" & MOAB_trimmed_data$ID == "44"),]
+# MOAB119 (11): 2 rows with "11" for Remarks column ("42" and "43" in ID column). They are identical. Remove the first one.
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "42"),]
 
 ```
 
@@ -952,7 +919,7 @@ MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB111" & MOAB_trimmed_data$ID =
 
 ```
 
-There are now 1,XXX rows in the trimmed data frame! 21 transects x 50 points per transect = 1,050 data points, so this makes sense, but double-check that there are 50 rows for every transect.
+There are now 1,050 rows in the trimmed data frame! 21 transects x 50 points per transect = 1,050 data points, so this makes sense, but double-check that there are 50 rows for every transect.
 
 ```{r MOAB_check_rows_per_transect}
 
@@ -968,6 +935,8 @@ for (i in MOAB_Transects) {
   cat("Transect:", i, "- Rows:", MOAB_rows_per_transect[[i]], "\n")
 }
 
+# we are missing data for the 14 m mark on transect MOAB116 and 27 m mark on transect MOAB135
+
 ```
 
 Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
@@ -977,16 +946,45 @@ Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other*
 # create a data frame for rows with an "NA" for Top_layer
 MOAB_NA_Top_layer <- subset(MOAB_trimmed_data, is.na(Top_layer))
 
-# there are 7 rows that have an "NA" for Top_layer
+# there are 30 rows that have an "NA" for Top_layer
 
 # all of these rows have "N" for lower layers, "OPEN" for Microsite, and 0 for Top_height, so we will assume their Top_layer should be "N"
 MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB111" & MOAB_trimmed_data$ID == "33", "Top_layer"] <- "N"
 MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB114" & MOAB_trimmed_data$ID == "22", "Top_layer"] <- "N"
 MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB116" & MOAB_trimmed_data$ID == "17", "Top_layer"] <- "N"
-MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "12", "Top_layer"] <- "N"
-MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "6", "Top_layer"] <- "N"
-MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$ID == "21", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "44", "Top_layer"] <- "N"
 MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB149" & MOAB_trimmed_data$ID == "5", "Top_layer"] <- "N"
+
+# all of these rows have 0 for Top_height, so we will assume their Top_layer should be "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "52", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "50", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "47", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "45", "Top_layer"] <- "N"
+
+# expeditated data collection on transect MOAB135 due to storm, all of these Top_layer columns should be "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "14", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "15", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "16", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "17", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "18", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "19", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "20", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "22", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "30", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "32", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "33", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "34", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "35", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "36", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "37", "Top_layer"] <- "N"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "45", "Top_layer"] <- "N"
+
+# all columns are empty for these rows, so they need to be deleted from the data frame
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$ID == "43"),]
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB126" & MOAB_trimmed_data$ID == "18"),]
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB128" & MOAB_trimmed_data$ID == "33"),]
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB131" & MOAB_trimmed_data$ID == "2"),]
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB147" & MOAB_trimmed_data$ID == "33"),]
 
 # look at unique values for Top_layer_other
 unique(MOAB_trimmed_data$Top_layer_other)
@@ -1000,6 +998,12 @@ unique(MOAB_trimmed_data$Top_layer_other)
 # create a data frame for rows with an "NA" for Lower_1
 MOAB_NA_Lower_1 <- subset(MOAB_trimmed_data, is.na(Lower_1))
 
+# there are 34 rows that have an "NA" for Lower_1
+# 29 of these rows have "N" for Top_layer, 2 have "L-PGRASS" for Top_layer, 2 have "L-OTHER" for Top_layer and "BOGR" for Top_layer_other, and 1 has "L-OTHER" for Top_layer and "ACHY" for Top_layer_other 
+# several rows have "N" for random other lower layers
+# we are going to assume all of these should be "N" for Lower_1
+MOAB_trimmed_data$Lower_1[is.na(MOAB_trimmed_data$Lower_1)] <- "N"
+
 # look at unique values for Lower_1_other
 unique(MOAB_trimmed_data$Lower_1_other)
 
@@ -1011,6 +1015,12 @@ unique(MOAB_trimmed_data$Lower_1_other)
 
 # create a data frame for rows with an "NA" for Lower_2
 MOAB_NA_Lower_2 <- subset(MOAB_trimmed_data, is.na(Lower_2))
+
+# there are 38 rows that have an "NA" for Lower_2
+# 37 of these rows have "N" for Lower_1
+# 1 row has "L-OTHER" for Lower_1 and "EPTO" for Lower_1_other
+# we are going to assume all of these should be "N" for Lower_2
+MOAB_trimmed_data$Lower_2[is.na(MOAB_trimmed_data$Lower_2)] <- "N"
 
 # look at unique values for Lower_2_other
 unique(MOAB_trimmed_data$Lower_2_other)
@@ -1024,6 +1034,10 @@ unique(MOAB_trimmed_data$Lower_2_other)
 # create a data frame for rows with an "NA" for Lower_3
 MOAB_NA_Lower_3 <- subset(MOAB_trimmed_data, is.na(Lower_3))
 
+# there are 31 rows that have an "NA" for Lower_3
+# all of these rows have an "N" for Lower_2, so we are going to assume they should also have an "N" for Lower_3
+MOAB_trimmed_data$Lower_3[is.na(MOAB_trimmed_data$Lower_3)] <- "N"
+
 # look at unique values for Lower_3_other
 unique(MOAB_trimmed_data$Lower_3_other)
 
@@ -1036,11 +1050,20 @@ unique(MOAB_trimmed_data$Lower_3_other)
 # create a data frame for rows with an "NA" for Soil_surface
 MOAB_NA_Soil_surface <- subset(MOAB_trimmed_data, is.na(Soil_surface))
 
-# there are 3 rows that have an "NA" for Soil_surface
+# there are 26 rows that have an "NA" for Soil_surface
 
-# all points along the transect for one of these points have "SOIL" for Soil_surface, so we will go ahead and assume this point should have "SOIL" as well
-# the other two points are from the same transect, the point in the middle of them has "BURROW" for Soil_surface, but the vast majority of the other points have "SOIL", so we will go ahead and assume this point should have "SOIL" as well
-JORN_trimmed_data$Soil_surface[is.na(JORN_trimmed_data$Soil_surface)] <- "SOIL"
+# after checking Soil_surface values for surrounding points, we will assume these rows should have the default "SOIL" value for Soil_surface
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB104" & MOAB_trimmed_data$Remarks == "3", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB118" & MOAB_trimmed_data$Remarks == "26", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB119" & MOAB_trimmed_data$Remarks == "5", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB128" & MOAB_trimmed_data$Remarks == "9", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB128" & MOAB_trimmed_data$Remarks == "16", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB137" & MOAB_trimmed_data$Remarks == "48", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB148" & MOAB_trimmed_data$Remarks == "7", "Soil_surface"] <- "SOIL"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB148" & MOAB_trimmed_data$Remarks == "26", "Soil_surface"] <- "SOIL"
+
+# the remaining rows with "NA" for Soil_surface are from transect MOAB135 and should be bedrock (expidated data collection due to storm)
+MOAB_trimmed_data$Soil_surface[is.na(MOAB_trimmed_data$Soil_surface)] <- "BEDROCK"
 
 # look at unique values for Soil_surface_other
 unique(MOAB_trimmed_data$Soil_surface_other)
@@ -1050,7 +1073,149 @@ unique(MOAB_trimmed_data$Soil_surface_other)
 # "MOSE" should probably be "MOSS"
 MOAB_trimmed_data$Soil_surface_other[MOAB_trimmed_data$Soil_surface_other == "MOSE"] <- "MOSS"
 
+# "AHILL" should be "ANTHILL"
+MOAB_trimmed_data$Soil_surface_other[MOAB_trimmed_data$Soil_surface_other == "AHILL"] <- "ANTHILL"
+
 ```
+
+```{r MOAB_clean_Microsite}
+
+# create a data frame for rows with an "NA" for Microsite
+MOAB_NA_Microsite <- subset(MOAB_trimmed_data, is.na(Microsite))
+
+# there are 32 rows that have an "NA" for Microsite
+# one of these rows has "L-SHRUB" for Top_layer, so we will assume the Microsite should be "CANOPY"
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "28", "Microsite"] <- "CANOPY"
+# all the other rows either have "N" for Top_layer or "L-FORB" or "L-PGRASS", so we will assume a Microsite of "OPEN" for all of them
+MOAB_trimmed_data$Microsite[is.na(MOAB_trimmed_data$Microsite)] <- "OPEN"
+
+# look at unique values for Microstie_other
+unique(MOAB_trimmed_data$Microsite_other)
+
+# one row has a Microsite_other value of "0" - this should just be "NA"
+MOAB_trimmed_data$Microsite_other[MOAB_trimmed_data$Microsite_other == "0"] <- NA
+
+```
+
+```{r MOAB_clean_Top_height}
+
+# create a data frame for rows with an "NA" for Microsite
+MOAB_NA_Top_height <- subset(MOAB_trimmed_data, is.na(Top_height))
+
+# there are 29 rows that have an "NA" for Top_height
+# one of these rows is missing quite a bit of other data (e.g., litter type/depths), so we will delete it from the data frame (it is from the transect that was cut short by the storm)
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "28"),]
+# the rest all have "N" for Top_layer, so the Top_height values should be "0"
+MOAB_trimmed_data$Top_height[is.na(MOAB_trimmed_data$Top_height)] <- 0
+
+```
+
+```{r MOAB_clean_Litter}
+
+# create a data frame for rows with an "NA" for Litter
+MOAB_NA_Litter <- subset(MOAB_trimmed_data, is.na(Litter))
+
+# there are 23 rows that have an "NA" for Litter
+
+# they all have litter depth measurements of 0 (or "NA"), so they should have "N" for Litter
+MOAB_trimmed_data$Litter[is.na(MOAB_trimmed_data$Litter)] <- "N"
+
+# look at unique values for Litter_other
+unique(MOAB_trimmed_data$Litter_other)
+
+# "LT-H_DUNG" should just be "H_DUNG" for consistency
+MOAB_trimmed_data$Litter_other[MOAB_trimmed_data$Litter_other == "LT-H_DUNG"] <- "H_DUNG"
+
+# create a data frame for rows with "NA" values for litter depth measurements
+MOAB_NA_Litter_depth <- subset(MOAB_trimmed_data,
+  is.na(Litter_depth_center) |
+  is.na(Litter_depth_north) |
+  is.na(Litter_depth_east) |
+  is.na(Litter_depth_south) |
+  is.na(Litter_depth_west))
+
+# there are 35 rows that have "NA" for at least one litter depth measurement
+
+# make sure litter depth values are numeric
+MOAB_trimmed_data$Litter_depth_center <- as.numeric(MOAB_trimmed_data$Litter_depth_center)
+MOAB_trimmed_data$Litter_depth_north <- as.numeric(MOAB_trimmed_data$Litter_depth_north)
+MOAB_trimmed_data$Litter_depth_east <- as.numeric(MOAB_trimmed_data$Litter_depth_east)
+MOAB_trimmed_data$Litter_depth_south <- as.numeric(MOAB_trimmed_data$Litter_depth_south)
+MOAB_trimmed_data$Litter_depth_west <- as.numeric(MOAB_trimmed_data$Litter_depth_west)
+
+# 5 of these rows have "LT-H" for Litter, so we will take the average litter depth from the other measurements and paste it into the missing measurement (but one needs to be removed because there are no depth measurements at all)
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB106" & MOAB_trimmed_data$Remarks == "45", "Litter_depth_north"] <- 4
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB116" & MOAB_trimmed_data$Remarks == "7", "Litter_depth_east"] <- 3
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "25", "Litter_depth_center"] <- 0
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "25", "Litter_depth_north"] <- 0
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "25", "Litter_depth_south"] <- 0
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "25", "Litter_depth_west"] <- 0
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB149" & MOAB_trimmed_data$Remarks == "50", "Litter_depth_center"] <- 5
+MOAB_trimmed_data[MOAB_trimmed_data$Transect=="MOAB149" & MOAB_trimmed_data$Remarks == "50", "Litter_depth_north"] <- 1
+
+MOAB_trimmed_data <- MOAB_trimmed_data[!(MOAB_trimmed_data$Transect=="MOAB135" & MOAB_trimmed_data$Remarks == "26"),]
+
+# the remaining 30 rows have "N" or "DUNG" or "LT-W" for Litter
+MOAB_trimmed_data$Litter_depth_center[is.na(MOAB_trimmed_data$Litter_depth_center)] <- "0"
+MOAB_trimmed_data$Litter_depth_north[is.na(MOAB_trimmed_data$Litter_depth_north)] <- "0"
+MOAB_trimmed_data$Litter_depth_east[is.na(MOAB_trimmed_data$Litter_depth_east)] <- "0"
+MOAB_trimmed_data$Litter_depth_south[is.na(MOAB_trimmed_data$Litter_depth_south)] <- "0"
+MOAB_trimmed_data$Litter_depth_west[is.na(MOAB_trimmed_data$Litter_depth_west)] <- "0"
+
+```
+
+```{r MOAB_clean_Nearby_canopy}
+
+# look at unique values for Nearby_canopy_1
+unique(MOAB_trimmed_data$Nearby_canopy_1)
+
+# fix typos
+MOAB_trimmed_data$Nearby_canopy_1[MOAB_trimmed_data$Nearby_canopy_1 == "L-PGRASS_ L-SUBS_PATCH"] <- "L-PGRASS_L-SUBS_patch"  
+MOAB_trimmed_data$Nearby_canopy_1[MOAB_trimmed_data$Nearby_canopy_1 == "L-PGASS_patch"] <- "L-PGRASS_patch"  
+
+# look at unique values for Nearby_canopy_2
+unique(MOAB_trimmed_data$Nearby_canopy_2)
+
+# fix typos
+MOAB_trimmed_data$Nearby_canopy_2[MOAB_trimmed_data$Nearby_canopy_2 == "L-PGRASS_PATCH"] <- "L-PGRASS_patch"
+MOAB_trimmed_data$Nearby_canopy_2[MOAB_trimmed_data$Nearby_canopy_2 == "L-PGRASS_L-SUBS_PATCH"] <- "L-PGRASS_L-SUBS_patch"
+
+# look at unique values for Nearby_canopy_3
+unique(MOAB_trimmed_data$Nearby_canopy_3)
+
+# fix typos 
+MOAB_trimmed_data$Nearby_canopy_3[MOAB_trimmed_data$Nearby_canopy_3 == "L-FORB_PATCH"] <- "L-FORB_patch"
+
+# look at unique values for Nearby_canopy_4
+unique(MOAB_trimmed_data$Nearby_canopy_4)
+
+# look at unique values for Nearby_canopy_5
+unique(MOAB_trimmed_data$Nearby_canopy_5)
+
+```
+
+### Level 2 Data
+
+```{r save_MOAB_L2}
+
+# write a csv file of the L2 transect data, save it locally, then upload it to the appropriate Dropbox folder
+write.csv(MOAB_trimmed_data, "/Users/AlexiBesser/Desktop/MOAB_LPI_L2_Spring_2025_Data.csv")
+
+```
+
+# ONAQ
+
+## May 2025
+
+**Personnel:** Alexi Besser, Isabel Torres, Dellena Bloom, Jianghai Peng
+
+**Brief Description of Modified LPI Protocol:** Transects ran S to N and were read on the W side. A pin flag was dropped every 1 m along the transect. All vegetation layers (including canopies) intersecting this pin were noted as dead or living and were recorded to species if known and life-form if not. The top layer height (cm), soil surface texture, litter type(s), litter depth (mm), and microsite were also recorded. A SparkFun RTK Express GNSS was used to record the location of each transect point.
+
+50 m transects:
+
+50 m transects with quadrats every 5 m (50 m, 45 m, 40 m, 35 m, 30 m, 25 m, 20 m, 15 m, 10 m, 5 m):
+
+### Levels 0 and 1 Data
 
 ```{r ONAQ}
 
@@ -1062,21 +1227,343 @@ MOAB_trimmed_data$Soil_surface_other[MOAB_trimmed_data$Soil_surface_other == "MO
 ONAQ_L0_Dropbox_folder <- 
 
 # specify the local folder containing the downloaded L0 transect data
-setwd("/Users/AlexiBesser/Downloads/csv_files-3")
-ONAQ_L0_data_files <- dir("/Users/AlexiBesser/Downloads/csv_files-3")
+setwd("/Users/AlexiBesser/Downloads/ONAQ_LPI_L0_Spring_2025_csv_files")
+ONAQ_L0_data_files <- dir("/Users/AlexiBesser/Downloads/ONAQ_LPI_L0_Spring_2025_csv_files")
 
 
 ### LEVEL 1 DATA ###
 
 # read in L0 csv files and create a new column for transect ID
 ONAQ_L1_data <- read_csv(ONAQ_L0_data_files, id = "Transect") %>%
-   mutate(Transect = str_remove_all(Transect, ".csv"))
+  mutate(Transect = str_remove_all(Transect, ".csv")) %>%
+  mutate(Transect = str_remove_all(Transect, "_1")) %>%
+  mutate(Transect = str_remove_all(Transect, "_2"))
 
 ```
 
-```{r}
+There is now 1 csv file containing data for all 21 transects. This is considered level 1 data.
 
-Spring_2025_Transect_Locations <- rbind(SRER_Spring_2025_Transect_Locations, JORN_Spring_2025_Transect_Locations, MOAB_Spring_2025_Transect_Locations, ONAQ_Spring_2025_Transect_Locations)
+**L1 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> ONAQ \> Transect_LPI_Data \> Level_1 \> Spring_2025 \> csv_file
 
-write.csv(Spring_2025_Transect_Locations, "Spring_2025_Transect_Locations.csv", row.names = FALSE)
+```{r read_ONAQ_L1}
+
+# read in L1 transect data
+# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
+#SRER_L1_data <- read.csv("")
+
 ```
+
+### Clean Level 1 Data
+
+Investigate and rectify duplicate rows.
+
+```{r ONAQ_merge_duplicates}
+
+# create a data frame for duplicate points 
+ONAQ_duplicate_points <- ONAQ_L1_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+ONAQ_trimmed_data <- ONAQ_L1_data
+
+# there are 569 rows of duplicate points
+ONAQ_dup_NAcols_removed <- ONAQ_duplicate_points %>%
+  filter(`Instrument Ht` == 1.74) %>%
+  select(-c(Top_layer:Quadrat_checklist)) %>%
+  merge(ONAQ_duplicate_points %>%
+    filter(`Instrument Ht` == 0) %>%
+    select(-c(Geometry:`Ortho Height`, `Fix ID`:`Satellites in Use`)), 
+    by = c("Transect", "Remarks"))
+
+colnames(ONAQ_dup_NAcols_removed)[colnames(ONAQ_dup_NAcols_removed) == "ID.x"] <- "ID"
+
+colnames(ONAQ_dup_NAcols_removed)[colnames(ONAQ_dup_NAcols_removed) == "Time.x"] <- "Time"
+
+colnames(ONAQ_dup_NAcols_removed)[colnames(ONAQ_dup_NAcols_removed) == "Instrument Ht.x"] <- "Instrument Ht"
+
+ONAQ_dup_NAcols_removed <- ONAQ_dup_NAcols_removed %>%
+    select(-c("ID.y", "Time.y", "Instrument Ht.y"))
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data %>%
+  filter(!(`Instrument Ht` == 0))
+
+ONAQ_trimmed_data <- ONAQ_trimmed_data %>%
+  anti_join(ONAQ_dup_NAcols_removed, by = c("Transect", "Remarks")) %>%
+  bind_rows(ONAQ_dup_NAcols_removed)
+
+# create a data frame for duplicate points 
+ONAQ_duplicate_points_check <- ONAQ_trimmed_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+# there are 8 duplicate points remaining
+# ONAQ213 (45): 2 rows with "45" for Remarks column ("19" and "10" in ID column). One of these was a typo and should be "35"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ213" & ONAQ_trimmed_data$ID == "19" & ONAQ_trimmed_data$Remarks == "45", "Remarks"] <- 35
+
+# ONAQ231 (39): 2 rows with "39" for Remarks column ("15" and "14" in ID column). One of these was a typo and should be "38"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ231" & ONAQ_trimmed_data$ID == "15" & ONAQ_trimmed_data$Remarks == "39", "Remarks"] <- 38
+
+# ONAQ242 (35): 2 rows with "35" for Remarks column ("17" and "18" in ID column). ID "18" contains the file name for a photograph ("20250527170620.jpg") - this file name will be copied and pasted into the Photo column for the ID "17" row and the ID "18" row will be deleted.
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ242" & ONAQ_trimmed_data$ID == "17", "Photo"] <- "20250527170620.jpg"
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ242" & ONAQ_trimmed_data$Remarks == "35" & ONAQ_trimmed_data$ID == "18"),]
+
+# ONAQ226 (42): 2 rows with "42" for Remarks column ("49" and "51" in ID column). They are identical, so the first row will be deleted.
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ226" & ONAQ_trimmed_data$Remarks == "42" & ONAQ_trimmed_data$ID == "49"),]
+
+```
+
+Look at unique *Remarks*. Remove rows that are not points on transects but rather notes at the end of transects and rows with "NA" in every column.
+
+```{r ONAQ_clean_Remarks}
+
+# extract and review unique Remarks
+unique(ONAQ_trimmed_data$Remarks)
+
+```
+
+There are now 1,000 rows in the trimmed data frame! 20 transects x 50 points per transect = 1,000 data points, so this makes sense, but double-check that there are 50 rows for every transect.
+
+```{r ONAQ_check_rows_per_transect}
+
+# create a character string of the transects
+ONAQ_Transects <- unique(ONAQ_trimmed_data$Transect)
+
+# create an empty list for the number of rows per transect
+ONAQ_rows_per_transect <- list()
+
+# run a for loop to count the number of rows per transect
+for (i in ONAQ_Transects) {
+  ONAQ_rows_per_transect[[i]] <- sum(ONAQ_trimmed_data$Transect == i)
+  cat("Transect:", i, "- Rows:", ONAQ_rows_per_transect[[i]], "\n")
+}
+
+```
+
+Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
+
+```{r ONAQ_clean_Top_layer}
+
+# create a data frame for rows with an "NA" for Top_layer
+ONAQ_NA_Top_layer <- subset(ONAQ_trimmed_data, is.na(Top_layer))
+
+# there are 84 rows that have an "NA" for Top_layer
+
+# ONAQ226 (44): has "JUOS" for Top_layer_other, so the Top_layer should be "L-OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ226" & ONAQ_trimmed_data$Remarks == "44", "Top_layer"] <- "L-OTHER"
+
+# ONAQ243 (6): has "SP" for Top_layer_other, so the Top_layer should be "L-OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ243" & ONAQ_trimmed_data$Remarks == "6", "Top_layer"] <- "L-OTHER"
+
+# the following rows have to be removed because they have values for Top_height but we have no idea what the Top_layer is
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ210" & ONAQ_trimmed_data$Remarks == "5"),]
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ210" & ONAQ_trimmed_data$Remarks == "27"),]
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ228" & ONAQ_trimmed_data$Remarks == "26"),]
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ228" & ONAQ_trimmed_data$Remarks == "27"),]
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ204" & ONAQ_trimmed_data$Remarks == "9"),]
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!(ONAQ_trimmed_data$Transect=="ONAQ232" & ONAQ_trimmed_data$Remarks == "14"),]
+
+# for now, delete rows with an "NA" for Top_height because important information is missing for most other columns for these rows as well
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!is.na(ONAQ_trimmed_data$Top_height), ]
+
+# the remaining rows have "0" for Top_height, so we will assume Top_layer should be "N"
+ONAQ_trimmed_data$Top_layer[is.na(ONAQ_trimmed_data$Top_layer)] <- "N"
+
+# look at unique values for Top_layer_other
+unique(ONAQ_trimmed_data$Top_layer_other)
+
+# fix typos
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "JUORS"] <- "JUOS"
+
+```
+
+```{r ONAQ_clean_Lower_1}
+
+# create a data frame for rows with an "NA" for Lower_1
+ONAQ_NA_Lower_1 <- subset(ONAQ_trimmed_data, is.na(Lower_1))
+
+# there are 85 rows that have an "NA" for Lower_1
+
+# For now, we are going to assume all of these should be "N" for Lower_1
+ONAQ_trimmed_data$Lower_1[is.na(ONAQ_trimmed_data$Lower_1)] <- "N"
+
+# look at unique values for Lower_1_other
+unique(ONAQ_trimmed_data$Lower_1_other)
+
+# fix typos
+ONAQ_trimmed_data$Lower_1_other[ONAQ_trimmed_data$Lower_1_other == "BRTE30"] <- "BRTE"
+
+```
+
+```{r ONAQ_clean_Lower_2}
+
+# create a data frame for rows with an "NA" for Lower_2
+ONAQ_NA_Lower_2 <- subset(ONAQ_trimmed_data, is.na(Lower_2))
+
+# there are 101 rows that have an "NA" for Lower_2
+
+# For now, we are going to assume all of these should be "N" for Lower_2
+ONAQ_trimmed_data$Lower_2[is.na(ONAQ_trimmed_data$Lower_2)] <- "N"
+
+# look at unique values for Lower_2_other
+unique(ONAQ_trimmed_data$Lower_2_other)
+
+# no typos
+
+```
+
+```{r ONAQ_clean_Lower_3}
+
+# create a data frame for rows with an "NA" for Lower_3
+ONAQ_NA_Lower_3 <- subset(ONAQ_trimmed_data, is.na(Lower_3))
+
+# there are 101 rows that have an "NA" for Lower_3
+# For now, we are going to assume they should also have an "N" for Lower_3
+ONAQ_trimmed_data$Lower_3[is.na(ONAQ_trimmed_data$Lower_3)] <- "N"
+
+# look at unique values for Lower_3_other
+unique(ONAQ_trimmed_data$Lower_3_other)
+
+# no typos
+
+```
+
+```{r ONAQ_clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+ONAQ_NA_Soil_surface <- subset(ONAQ_trimmed_data, is.na(Soil_surface))
+
+# there are 69 rows that have an "NA" for Soil_surface
+
+# For now, we will assume these rows should have the default "SOIL" value for Soil_surface
+ONAQ_trimmed_data$Soil_surface[is.na(ONAQ_trimmed_data$Soil_surface)] <- "SOIL"
+
+# look at unique values for Soil_surface_other
+unique(ONAQ_trimmed_data$Soil_surface_other)
+
+# fix typos
+
+# "PGRASS" should be "L-PGRASS"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "PGRASS"] <- "L-PGRASS"
+
+# "D_shrub" should be "D-SHRUB"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "D_shrub"] <- "D-SHRUB"
+
+# "MOSE" should be "MOSS"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "MOSE"] <- "MOSS"
+
+# "A_HILL" should be "ANTHILL"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "A_HILL"] <- "ANTHILL"
+
+```
+
+```{r ONAQ_clean_Microsite}
+
+# create a data frame for rows with an "NA" for Microsite
+ONAQ_NA_Microsite <- subset(ONAQ_trimmed_data, is.na(Microsite))
+
+# there are 47 rows that have an "NA" for Microsite
+# three of these rows have "L-OTHER" for Top_layer and "JUOS" or "ARTR" for Top_layer_other, so the Microsite should probably be "CANOPY"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ226" & ONAQ_trimmed_data$Remarks == "44", "Microsite"] <- "CANOPY"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ226" & ONAQ_trimmed_data$Remarks == "38", "Microsite"] <- "CANOPY"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ228" & ONAQ_trimmed_data$Remarks == "6", "Microsite"] <- "CANOPY"
+
+# For now, we will assume the other rows should have a Microsite of "OPEN"
+ONAQ_trimmed_data$Microsite[is.na(ONAQ_trimmed_data$Microsite)] <- "OPEN"
+
+# look at unique values for Microstie_other
+unique(ONAQ_trimmed_data$Microsite_other)
+
+```
+
+```{r ONAQ_clean_Top_height}
+
+# create a data frame for rows with an "NA" for Microsite
+ONAQ_NA_Top_height <- subset(ONAQ_trimmed_data, is.na(Top_height))
+
+# there are 0 rows that have an "NA" for Top_height
+
+```
+
+```{r ONAQ_clean_Litter}
+
+# create a data frame for rows with an "NA" for Litter
+ONAQ_NA_Litter <- subset(ONAQ_trimmed_data, is.na(Litter))
+
+# there are 24 rows that have an "NA" for Litter
+
+# For the sake of time, we are going to remove these rows for now, as many of them have litter depth measurments
+ONAQ_trimmed_data <- ONAQ_trimmed_data[!is.na(ONAQ_trimmed_data$Litter),]
+
+# look at unique values for Litter_other
+unique(ONAQ_trimmed_data$Litter_other)
+
+# "W_" should just be "W" for consistency
+ONAQ_trimmed_data$Litter_other[ONAQ_trimmed_data$Litter_other == "W_"] <- "W"
+
+# create a data frame for rows with "NA" values for litter depth measurements
+ONAQ_NA_Litter_depth <- subset(ONAQ_trimmed_data,
+  is.na(Litter_depth_center) |
+  is.na(Litter_depth_north) |
+  is.na(Litter_depth_east) |
+  is.na(Litter_depth_south) |
+  is.na(Litter_depth_west))
+
+# there are 8 rows that have "NA" for at least one litter depth measurement
+
+# make sure litter depth values are numeric
+ONAQ_trimmed_data$Litter_depth_center <- as.numeric(ONAQ_trimmed_data$Litter_depth_center)
+ONAQ_trimmed_data$Litter_depth_north <- as.numeric(ONAQ_trimmed_data$Litter_depth_north)
+ONAQ_trimmed_data$Litter_depth_east <- as.numeric(ONAQ_trimmed_data$Litter_depth_east)
+ONAQ_trimmed_data$Litter_depth_south <- as.numeric(ONAQ_trimmed_data$Litter_depth_south)
+ONAQ_trimmed_data$Litter_depth_west <- as.numeric(ONAQ_trimmed_data$Litter_depth_west)
+
+# For now, we will just assume all the "NA" values should be "0"
+ONAQ_trimmed_data$Litter_depth_center[is.na(ONAQ_trimmed_data$Litter_depth_center)] <- "0"
+ONAQ_trimmed_data$Litter_depth_north[is.na(ONAQ_trimmed_data$Litter_depth_north)] <- "0"
+ONAQ_trimmed_data$Litter_depth_east[is.na(ONAQ_trimmed_data$Litter_depth_east)] <- "0"
+ONAQ_trimmed_data$Litter_depth_south[is.na(ONAQ_trimmed_data$Litter_depth_south)] <- "0"
+ONAQ_trimmed_data$Litter_depth_west[is.na(ONAQ_trimmed_data$Litter_depth_west)] <- "0"
+
+```
+
+```{r ONAQ_clean_Nearby_canopy}
+
+# look at unique values for Nearby_canopy_1
+unique(ONAQ_trimmed_data$Nearby_canopy_1)
+
+# fix typos
+ONAQ_trimmed_data$Nearby_canopy_1[ONAQ_trimmed_data$Nearby_canopy_1 == "L-PGRASS_PATCH"] <- "L-PGRASS_patch"  
+
+# look at unique values for Nearby_canopy_2
+unique(ONAQ_trimmed_data$Nearby_canopy_2)
+
+# fix typos
+ONAQ_trimmed_data$Nearby_canopy_2[ONAQ_trimmed_data$Nearby_canopy_2 == "L-BRTE_PGRASS_D-BRTE_DPGRASS_patch"] <- "L-BRTE_L-PGRASS_D-BRTE_D-PGRASS_patch"
+ONAQ_trimmed_data$Nearby_canopy_2[ONAQ_trimmed_data$Nearby_canopy_2 == "LPGRASS_DPGRASS_L-FORB_patch"] <- "L-PGRASS_D-PGRASS_L-FORB_patch"
+
+# look at unique values for Nearby_canopy_3
+unique(ONAQ_trimmed_data$Nearby_canopy_3)
+
+# fix typos 
+ONAQ_trimmed_data$Nearby_canopy_3[ONAQ_trimmed_data$Nearby_canopy_3 == "LPGRASS_patch"] <- "L-PGRASS_patch"
+
+# look at unique values for Nearby_canopy_4
+unique(ONAQ_trimmed_data$Nearby_canopy_4)
+
+# look at unique values for Nearby_canopy_5
+unique(ONAQ_trimmed_data$Nearby_canopy_5)
+
+```
+
+### Level 2 Data
+
+```{r save_ONAQ_L2}
+
+# write a csv file of the L2 transect data, save it locally, then upload it to the appropriate Dropbox folder
+write.csv(ONAQ_trimmed_data, "/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Spring_2025_Data.csv")
+
+```
+
+# 

@@ -1,0 +1,2788 @@
+---
+title: "Figures for RISE Posters"
+format: html
+editor: visual
+---
+
+## Read in Fall 2024 L2 Data
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+
+```
+
+```{r}
+
+SRER_2024 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+SRER_2024$Site <- "SRER"
+SRER_2024$Season <- "F24"
+colnames(SRER_2024)[colnames(SRER_2024) == "Litter_depth"] <- "Litter_depth_center"
+ONAQ_2024 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+ONAQ_2024$Site <- "ONAQ"
+ONAQ_2024$Season <- "F24"
+ONAQ_2024$Remarks[ONAQ_2024$Remarks == "44_sameJUOS_45-42"] <- "44"
+ONAQ_2024$Remarks <- as.numeric(ONAQ_2024$Remarks)
+
+JORN_2024 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Fall_2024_Data.csv")
+JORN_2024$Site <- "JORN"
+JORN_2024$Season <- "F24"
+MOAB_2024 <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L2_Fall_2024_Data.csv")
+MOAB_2024$Site <- "MOAB"
+MOAB_2024$Season <- "F24"
+
+SRER_2025 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Spring_2025_Data.csv")
+SRER_2025$Site <- "SRER"
+SRER_2025$Season <- "S25"
+ONAQ_2025 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Spring_2025_Data.csv")
+ONAQ_2025$Site <- "ONAQ"
+ONAQ_2025$Season <- "S25"
+JORN_2025 <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L2_Spring_2025_Data.csv")
+JORN_2025$Site <- "JORN"
+JORN_2025$Season <- "S25"
+MOAB_2025 <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L2_Spring_2025_Data.csv")
+MOAB_2025$Site <- "MOAB"
+MOAB_2025$Season <- "S25"
+
+ 
+prelim_all_data <- dplyr::bind_rows(SRER_2024, SRER_2025, JORN_2024, JORN_2025, ONAQ_2024, ONAQ_2025, MOAB_2024, MOAB_2025)
+
+prelim_all_data <- prelim_all_data %>%
+  select(!c("X.1", "X"))
+
+write.csv(prelim_all_data, "~/Desktop/Prelim_DeAD_LPI_data.csv", row.names = FALSE)
+library(dplyr)
+
+prelim_all_data <- read.csv("~/Desktop/Prelim_DeAD_LPI_data.csv")
+
+prelim_all_data <- prelim_all_data %>%
+  mutate(Transect = if_else(Site == "SRER" & Season == "S25",
+                            paste0(Transect, "S25"),
+                            Transect))
+
+Transect_locations <- prelim_all_data %>%
+  group_by(Transect) %>%
+  summarize(mean_lat = mean(Latitude),
+            mean_long = mean(Longitude),
+            mean_elev = mean(Elevation))
+
+# SRER_2025_L1 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L1_Spring_2025_Data.csv")
+
+quad_data <- rbind(SRER_2025, ONAQ_2025, MOAB_2025, JORN_2025)
+
+```
+
+```{r}
+
+SRER_2024_mic <- SRER_2024 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+SRER_2024_mic$Season <- "Fall 2024"
+
+JORN_2024_mic <- JORN_2024 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+JORN_2024_mic$Season <- "Fall 2024"
+
+MOAB_2024_mic <- MOAB_2024 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+MOAB_2024_mic$Season <- "Fall 2024"
+
+ONAQ_2024_mic <- ONAQ_2024 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+ONAQ_2024_mic$Season <- "Fall 2024"
+
+SRER_2025_mic <- SRER_2025 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+SRER_2025_mic$Transect <- paste0(SRER_2025_mic$Transect, "S25")
+
+SRER_2025_mic$Season <- "Spring 2025"
+
+JORN_2025_mic <- JORN_2025 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+JORN_2025_mic$Season <- "Spring 2025"
+
+MOAB_2025_mic <- MOAB_2025 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+MOAB_2025_mic$Season <- "Spring 2025"
+
+ONAQ_2025_mic <- ONAQ_2025 %>%
+  select(Transect, Remarks, Elevation, Top_layer, Top_layer_other, Litter, Litter_other, Litter_depth_center, Top_height, Soil_surface, Soil_surface_other, Microsite, Microsite_other)
+
+ONAQ_2025_mic$Season <- "Spring 2025"
+
+all_mic <- rbind(SRER_2024_mic, SRER_2025_mic, JORN_2024_mic, JORN_2025_mic, MOAB_2024_mic, MOAB_2025_mic, ONAQ_2024_mic, ONAQ_2025_mic)
+
+```
+
+```{r}
+
+all_mic <- prelim_all_data
+
+# caclulate elevation ranges for each site for Table 1 of Besser et al.
+ElevationStats <- all_mic %>%
+  group_by(Site) %>%
+  dplyr::summarize(min_elev = min(Elevation),
+                   max_elev = max(Elevation))
+
+# Make a new column
+all_mic$Microsite_Plotting <- all_mic$Microsite
+
+# if Top_layer is "L-PGRASS" or "D-PGRASS"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-PGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-PGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# if Top_layer is "L-SHRUB" or "D-SHRUB"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# if Top_layer is "NONE"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "NONE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Bare Ground"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "N") {
+    all_mic$Microsite_Plotting[i] <- "Open: Bare Ground"}
+}
+
+# if Top_layer is "D-FORB" or "D-AGRASS"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-FORB") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-AGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-FORB") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-AGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# cactus
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-CACT") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-CACT") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "OP") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CY") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+# ACAN
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ACAN") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ACHY
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ACHY") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# AGCR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "AGCR") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# ARTR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ARTR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ATCA
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ATCA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ATCO
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ATCO") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# BOER
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BOER") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# BOGR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BOGR") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# BRTE
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BRTE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# BRTR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BRTR") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# CAER
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CAER") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+# CEPA
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CEPA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EP") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPIP") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPTO") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPVI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ERLE") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ERNA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "FEWI") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "FOSP") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "GUSA") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "HAGL") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "HIJA") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ISTE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "JUOS") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "KRLA") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "LATR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PAFL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PRGL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PRVE") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PSSP") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PUST") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PUTR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SAMI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SATR") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SAVE") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SEGR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SOEL") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SP") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNK") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNK1") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNKNOWN") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "YUEL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-SUBS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-SUBS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+all_mic[all_mic$Transect=="SRER001" & all_mic$Remarks == "8", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="SRER025" & all_mic$Remarks == "40", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="MOAB107" & all_mic$Remarks == "48", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="JORN141" & all_mic$Remarks == "25", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="ONAQ049" & all_mic$Remarks == "9", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="MOAB006" & all_mic$Remarks == "13", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic[all_mic$Transect=="MOAB010" & all_mic$Remarks == "22", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic[all_mic$Transect=="ONAQ012" & all_mic$Remarks == "7", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Shrub Canopy"] <- "Canopy: Shrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Perennial Grass Canopy"] <- "Canopy: Perennial Grasses"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Cactus Canopy"] <- "Canopy: Cactus"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "ROCK"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "ROCK_CANOPY"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_ROCK"] <- "Downed Wood or Rocks"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "WOOD"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "WOOD_CANOPY"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_WOOD"] <- "Downed Wood or Rocks"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "WASH"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "WASH_CANOPY"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_WASH"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "ROCK_WASH"] <- "Wash or Rill"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "RILL"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_RILL"] <- "Wash or Rill"
+
+# rename
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "HOLE"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "AHILL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "BURROW"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "GAMETRAIL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "COWPRINT"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "TCAST"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "AHILL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "ANTHILL"] <- "Animal Structures"
+
+all_mic$Litter[all_mic$Litter == "N"] <- "NONE"
+
+all_mic$Litter_depth_center <- as.numeric(all_mic$Litter_depth_center)
+all_mic$Litter_depth_center[is.na(all_mic$Litter_depth_center)] <- 0
+
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Wash or Rill"] <- "Washes or Rills"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Annual Grasses and Forbs"] <- "Annual Grasses and Forbs"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Subshrubs"] <- "Subshrubs"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Bare Ground"] <- "Bare Ground"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Cactus"] <- "Cactus"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Perennial Grasses"] <- "Perennial Grasses"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Shrubs"] <- "Shrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Washes or Rills"] <- "Nonliving Retention Elements"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Animal Structures"] <- "Nonliving Retention Elements"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Downed Wood or Rocks"] <- "Nonliving Retention Elements"
+
+# first, calculate the mean, median, and total litter depths and the number of observations across litter types and microsites
+MicrositeStats <- all_mic %>%
+  group_by(Microsite_Plotting) %>%
+  dplyr::reframe(
+    mean_depth = mean(unlist(across(c(Litter_depth_center,
+                                      Litter_depth_north,
+                                      Litter_depth_east,
+                                      Litter_depth_south,
+                                      Litter_depth_west))), na.rm = TRUE),
+    stdev_depth = sd(unlist(across(c(Litter_depth_center,
+                                     Litter_depth_north,
+                                     Litter_depth_east,
+                                     Litter_depth_south,
+                                     Litter_depth_west))), na.rm = TRUE),
+    obs = n(),
+    litter_obs_perc = (100 - mean(Litter == "NONE", na.rm = TRUE) * 100)) %>%
+  mutate(mic_obs_perc = (obs / sum(obs)) * 100)
+
+max_mic_obs_perc <- max(MicrositeStats$mic_obs_perc)
+max_mean_depth <- max(MicrositeStats$mean_depth)
+max_litter_obs_perc <- max(MicrositeStats$litter_obs_perc)
+
+MicrositeStats$Microsite_Plotting <- factor(MicrositeStats$Microsite_Plotting,
+                                            levels = c("Bare Ground",
+                                                       "Nonliving Retention Elements",
+                                                       "Annual Grasses and Forbs",
+                                                       "Subshrubs", "Cactus",
+                                                       "Perennial Grasses", "Shrubs"))
+
+MeanDepthMicPercPlot <- ggplot(MicrositeStats, aes(x = Microsite_Plotting, y = mean_depth)) +
+  labs(x = "Microsite", y = "Mean Litter Depth (mm)") +
+  geom_bar(stat = "identity", position = "stack",
+           fill = "#70B368", color = "black", linewidth = 0.25) +
+  geom_point(aes(y = mic_obs_perc * (max_mean_depth/max_mic_obs_perc)),
+             size = 3, pch = 21, fill = "navy", color = "black") +
+  scale_y_continuous(name = "Mean Litter Depth (mm)",
+    sec.axis = sec_axis(~ . * (max_mic_obs_perc/max_mean_depth), 
+                        name = "Observations of Microsite (%)"),
+    limits = c(0, 8.5),
+    expand = c(0, 0)) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color = "black", size = 10, angle = 45, hjust = 1),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = c(.8,.7),
+    axis.title.x = element_text(color = "black", face = "bold", size = 14),
+    axis.title.y = element_text(color = "black", face = "bold", size = 14, angle = 90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+MeanDepthMicPercPlot
+
+ggsave("~/Desktop/AllSites_MicrositeObservations_MeanLitterDepth.pdf", plot = last_plot(), width = 10, height = 6)
+
+
+LitterMicPercPlot <- ggplot(MicrositeStats, aes(x = Microsite_Plotting, y = litter_obs_perc)) +
+  labs(x = "Microsite", y = "Points with Litter (%)") +
+  geom_bar(stat = "identity", position = "stack",
+           fill = "gray50", color = "black", linewidth = 0.25) +
+  geom_point(aes(y = mic_obs_perc),
+             size = 3, pch = 21, fill = "navy", color = "black") +
+  scale_y_continuous(name = "Observations (%)",
+    limits = c(0, 100),
+    expand = c(0, 0)) +
+  theme_bw() +
+  ggtitle("All Sites") +
+  theme(axis.text.x=element_text(angle = 45,hjust = 1)) +
+  theme(plot.title = element_text(color = "black", face = "bold", size = 14),
+    axis.text.x = element_text(color = "black", size = 10),
+    axis.text.y = element_text(color = "black", size = 10),
+    legend.title = element_text(color = "black", size = 12),
+    legend.text = element_text(color = "black", size = 10),
+    legend.position = c(.8,.7),
+    axis.title.x = element_text(color = "black", size = 14),
+    axis.title.y = element_text(color = "black", size = 14, angle = 90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+LitterMicPercPlot
+
+
+MicrositeSiteStats <- all_mic %>%
+  group_by(Microsite_Plotting, Site) %>%
+  dplyr::reframe(
+    mean_depth = mean(unlist(across(c(Litter_depth_center,
+                                      Litter_depth_north,
+                                      Litter_depth_east,
+                                      Litter_depth_south,
+                                      Litter_depth_west))), na.rm = TRUE),
+    stdev_depth = sd(unlist(across(c(Litter_depth_center,
+                                     Litter_depth_north,
+                                     Litter_depth_east,
+                                     Litter_depth_south,
+                                     Litter_depth_west))), na.rm = TRUE),
+    obs = n(),
+    litter_obs_perc = (100 - mean(Litter == "NONE", na.rm = TRUE) * 100)) %>%
+  group_by(Site) %>%
+    mutate(mic_obs_perc = (obs / sum(obs)) * 100)
+
+MicrositeSiteStats$Microsite_Plotting <- factor(MicrositeSiteStats$Microsite_Plotting,
+                                            levels = c("Bare Ground",
+                                                       "Nonliving Retention Elements",
+                                                       "Annual Grasses and Forbs",
+                                                       "Subshrubs", "Cactus",
+                                                       "Perennial Grasses", "Shrubs"))
+
+MicrositeSiteStats$Site <- factor(MicrositeSiteStats$Site, levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+# Figure 3
+LitterObsSitesPlot <- ggplot(MicrositeSiteStats, aes(x = Microsite_Plotting,
+                                                     y = litter_obs_perc, fill = Site)) +
+  geom_bar(aes(fill = Site), stat = "identity", position = "stack",
+           color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3")) +
+  geom_point(aes(y = mic_obs_perc), size = 3, pch = 21, fill = "navy", color = "black") +
+  facet_wrap(~ Site) +
+  labs(x = "Microsite", y = "Points (%)") +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme_linedraw() +
+  theme(strip.text = element_text(size = 16),
+    axis.text.x = element_text(color = "black", size = 10, angle = 45, hjust = 1),
+    axis.text.y = element_text(color = "black", size = 12),
+    legend.position = "none",
+    legend.background = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(color = "black", size = 16, angle = 90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    axis.ticks.y = element_line(color = "black", linewidth = 0.75),
+    axis.ticks.x = element_blank()) +
+  scale_y_continuous(limits = c(0, 105),
+                     expand = c(0, 0))
+
+LitterObsSitesPlot
+
+ggsave("~/Desktop/AllSites_MicrositeObservations_LitterOccurrence.pdf", plot = LitterObsSitesPlot, width = 10, height = 6)
+
+```
+
+```{r Top_layer_plot}
+
+# create a new column and paste the value from the Top_layer column in it
+all_mic$Top_Plotting <- all_mic$Top_layer
+
+all_mic$Top_Plotting[all_mic$Top_Plotting == "L-SHRUB"] <- "Shrubs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "D-SHRUB"] <- "Shrubs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "L-SUBS"] <- "Subshrubs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "D-SUBS"] <- "Subshrubs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "L-FORB"] <- "Annual Grasses and Forbs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "D-FORB"] <- "Annual Grasses and Forbs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "L-AGRASS"] <- "Annual Grasses and Forbs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "D-AGRASS"] <- "Annual Grasses and Forbs"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "L-PGRASS"] <- "Perennial Grasses"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "D-PGRASS"] <- "Perennial Grasses"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "L-CACT"] <- "Cactus"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "D-CACT"] <- "Cactus"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "N"] <- "Bare Ground"
+all_mic$Top_Plotting[all_mic$Top_Plotting == "NONE"] <- "Bare Ground"
+
+# if Top_layer is "L-OTHER" or "D-OTHER" - categorize Top_Plotting by the taxon listed in Top_layer_other
+all_mic <- all_mic %>%
+  mutate(Top_Plotting = ifelse(
+      !is.na(Top_layer_other) &
+      Top_layer_other %in% c("GUSA", "CAER", "ISTE", "KRLA", "SATR", "SOEL", "SP") &
+      Top_layer %in% c("L-OTHER", "D-OTHER"),
+      "Subshrubs",
+      Top_Plotting))
+
+all_mic <- all_mic %>%
+  mutate(Top_Plotting = ifelse(
+      !is.na(Top_layer_other) &
+      Top_layer_other %in% c("ACAN", "ARTR", "ATCA", "ATCO", "CEPA", "EP", "EPTO", "EPVI",
+                             "ERNA", "FOSP", "JUOS", "LATR", "PAFL", "PI", "PRGL", "PRVE",
+                             "PUST", "PUTR", "SAMI", "SAVE", "SEGR", "SHRUB", "UNK",
+                             "UNK1", "UNKNOWN", "YUEL") &
+      Top_layer %in% c("L-OTHER", "D-OTHER"),
+      "Shrubs",
+      Top_Plotting))
+      
+all_mic <- all_mic %>%
+  mutate(Top_Plotting = ifelse(
+      !is.na(Top_layer_other) &
+      Top_layer_other %in% c("JUOS", "PAFL", "PI", "SEGR", "SHRUB", "PRVE") &
+      Top_layer %in% c("L-OTHER", "D-OTHER"),
+      "Shrubs",
+      Top_Plotting))
+
+all_mic <- all_mic %>%
+  mutate(Top_Plotting = ifelse(
+      !is.na(Top_layer_other) &
+      Top_layer_other %in% c("BRTE", "BRTR", "HAGL") & 
+      Top_layer %in% c("L-OTHER", "D-OTHER"),
+      "Annual Grasses and Forbs",
+      Top_Plotting))
+      
+all_mic <- all_mic %>%
+  mutate(Top_Plotting = ifelse(
+      !is.na(Top_layer_other) &
+      Top_layer_other %in% c("ACHY", "AGCR", "BOER", "BOGR", "ERLE", "HIJA", "PSSP") &
+      Top_layer %in% c("L-OTHER", "D-OTHER"),
+      "Perennial Grasses",
+      Top_Plotting))
+      
+all_mic <- all_mic %>%
+  mutate(Top_Plotting = ifelse(
+      !is.na(Top_layer_other) &
+      Top_layer_other %in% c("CY", "FEWI", "OP") &
+      Top_layer %in% c("L-OTHER", "D-OTHER"),
+      "Cactus",
+      Top_Plotting))
+
+all_mic[all_mic$Transect=="SRER001" & all_mic$Remarks == "8", "Top_Plotting"] <- "Shrubs"
+
+all_mic[all_mic$Transect=="SRER025" & all_mic$Remarks == "40", "Top_Plotting"] <- "Shrubs"
+
+all_mic[all_mic$Transect=="MOAB107" & all_mic$Remarks == "48", "Top_Plotting"] <- "Shrubs"
+
+all_mic[all_mic$Transect=="JORN141" & all_mic$Remarks == "25", "Top_Plotting"] <- "Shrubs"
+
+all_mic[all_mic$Transect=="ONAQ049" & all_mic$Remarks == "9", "Top_Plotting"] <- "Shrubs"
+
+all_mic[all_mic$Transect=="MOAB006" & all_mic$Remarks == "13", "Top_Plotting"] <- "Subshrubs"
+
+all_mic[all_mic$Transect=="MOAB010" & all_mic$Remarks == "22", "Top_Plotting"] <- "Subshrubs"
+
+all_mic[all_mic$Transect=="ONAQ012" & all_mic$Remarks == "7", "Top_Plotting"] <- "Subshrubs"
+
+all_mic[all_mic$Transect=="SRER031" & all_mic$Remarks == "6", "Top_Plotting"] <- "Cactus"
+
+# add a column for site
+all_mic <- all_mic %>%
+  mutate(Site = substr(Transect, 1, 4))
+ 
+# calculate mean elevation per site
+MeanElev <- all_mic %>%
+  group_by(Transect) %>%
+  dplyr::summarize(Mean.Elevation = mean(Elevation))
+
+MeanElev <- MeanElev[order(MeanElev$Mean.Elevation), ]
+
+MeanElev$Mean.Elevation <- factor(MeanElev$Mean.Elevation, levels = unique(MeanElev$Mean.Elevation))
+
+elevation.order <- as.list(MeanElev$Transect)
+
+# first, get counts, proportions, and percentages of each top layer type per transect
+TopLayerStats <- all_mic %>%
+  group_by(Top_Plotting, Transect, Site) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+TopLayerStatsSite <- all_mic %>%
+  group_by(Top_Plotting, Site) %>%
+  dplyr::summarize(count = n(), .groups = "drop") %>%
+  group_by(Site) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100)
+
+TopLayerStats$Transect <- factor(TopLayerStats$Transect, levels = elevation.order)
+
+TopLayerStats$Site <- factor(TopLayerStats$Site, levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+# make a bar plot
+# TopLayerPlot <- ggplot(TopLayerStats,
+#                           aes(x = Transect, y = percent, fill = Top_Plotting)) +
+#   facet_wrap(~ Site, scales = "free_x") +
+#   guides(fill = guide_legend(nrow = 1)) +
+#   labs(x = "Transect (Low to High Elevation)", y = "Top Layer Frequency (%)",
+#        fill = "Top Layer") +
+#   geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+#   scale_fill_manual(values = c("hotpink", "darkgoldenrod1", 
+#                                "olivedrab3","deepskyblue", "darkgreen",
+#                                "#000000")) +
+#   theme_linedraw() +
+#   theme(axis.text.x=element_text(angle=45,hjust=1)) +
+#   theme(strip.text = element_text(size=18),
+#     axis.text.x = element_blank(),
+#     axis.text.y = element_text(color="black", size=14),
+#     legend.title = element_blank(),
+#     legend.text = element_text(color="black", size=16),
+#     legend.position = "bottom",
+#     legend.background = element_blank(),
+#     axis.title.x = element_text(color="black", size=18),
+#     axis.title.y = element_text(color="black", size=20, angle=90),
+#     panel.grid.major = element_blank(), # switch off major grid lines
+#     panel.grid.minor = element_blank(), # switch off minor grid lines
+#     panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+#     axis.ticks.y = element_line(color = "black", linewidth = 0.75),
+#     axis.ticks.x = element_blank())
+# 
+# TopLayerPlot
+# 
+# ggsave("~/Desktop/AllSites_Top_Layer_Plots.pdf", TopLayerPlot, width = 14, height = 10)
+
+MicrositeTransectStats <- all_mic %>%
+  group_by(Site, Transect, Microsite_Plotting) %>%
+  summarize(obs = n(),
+            .groups = "drop_last") %>%
+  mutate(mic_obs_perc = (obs / sum(obs)) * 100) %>%
+  ungroup()
+
+MicrositeTransectStats$Microsite_Plotting <- factor(MicrositeTransectStats$Microsite_Plotting,
+                                         levels = c("Cactus", "Annual Grasses and Forbs", "Perennial Grasses", "Subshrubs", "Shrubs", "Nonliving Retention Elements", "Bare Ground"))
+
+
+MeanElev <- all_mic %>%
+  group_by(Transect) %>%
+  dplyr::summarize(Mean.Elevation = mean(Elevation))
+
+MicrositeTransectStats <- MicrositeTransectStats %>%
+  left_join(MeanElev, by = "Transect") %>%
+  mutate(Mean.Elevation = round(Mean.Elevation, 2))
+
+MeanElev <- MeanElev[order(MeanElev$Mean.Elevation), ]
+
+MeanElev$Mean.Elevation <- factor(MeanElev$Mean.Elevation, levels = unique(MeanElev$Mean.Elevation))
+
+elevation.order <- as.list(MeanElev$Transect)
+
+
+MicrositeTransectStats$Transect <- factor(MicrositeTransectStats$Transect, levels = elevation.order)
+
+MicrositeTransectStats$Site <- factor(MicrositeTransectStats$Site, levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+elev_labels <- MicrositeTransectStats %>%
+  distinct(Transect, Mean.Elevation) %>%
+  arrange(Transect) %>%
+  mutate(label = round(Mean.Elevation, 0))
+
+# make a bar plot
+MicrositeTransectPlot <- ggplot(MicrositeTransectStats,
+                          aes(x = Transect, y = mic_obs_perc, fill = Microsite_Plotting)) +
+  facet_wrap(~ Site, scales = "free_x") +
+  guides(fill = guide_legend(nrow = 2)) +
+  labs(x = "Transects Ordered by Mean Elevation (m)", y = "Microsite Composition (%)",
+       fill = "Microsite") +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.25) +
+  scale_fill_manual(values = c("hotpink", "darkgoldenrod1", 
+                               "olivedrab3","deepskyblue", "darkgreen","grey50",
+                               "#000000")) +
+  theme_linedraw() +
+  theme(strip.text = element_text(size = 18),
+    axis.text.x = element_text(color = "black", size = 11, angle = 90, hjust = 1,
+                               vjust = 0.5),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    axis.title.x = element_text(color = "black", size = 18),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    axis.ticks.y = element_line(color = "black", linewidth = 0.75),
+    axis.ticks.x = element_line(color = "black", linewidth = 0.75)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_discrete(labels = elev_labels$label)
+
+MicrositeTransectPlot
+
+ggsave("~/Desktop/AllSites_Microsite_Plots.pdf", MicrositeTransectPlot, width = 14, height = 10)
+
+```
+
+```{r}
+
+all_mic_trimmed <- all_mic %>%
+  filter(!Litter %in% c("DUNG", "LT-C", "LT-W"))
+
+all_mic_trimmed <- all_mic_trimmed %>%
+  filter(!Litter_other %in% c("DUNG", "W_DUNG", "W_B_DUNG", "B", "W", "W_B",
+                              "W_C", "W_YUEL", "YUEL", "SEED"))
+
+mean_depths <- all_mic_trimmed %>%
+  mutate(mean_depth = rowMeans(across(c(
+    Litter_depth_center,
+    Litter_depth_north,
+    Litter_depth_east,
+    Litter_depth_south,
+    Litter_depth_west
+  )), na.rm = TRUE))
+  
+mean_depths$Microsite_Plotting <- factor(mean_depths$Microsite_Plotting,
+                                             levels = c("Bare Ground", "Nonliving Retention Elements", "Cactus", "Annual Grasses and Forbs", "Perennial Grasses", "Subshrubs", "Shrubs"))
+
+mean_depths$Site <- factor(mean_depths$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+LitterBoxPlot <- ggplot(mean_depths, aes(x = Microsite_Plotting,
+                                         y = mean_depth, fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+               color = "black",
+               linewidth = 0.25) +
+  scale_fill_manual(values = c("darkgoldenrod","olivedrab", "sienna2", "darkseagreen3")) +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(axis.text.x = element_text(color = "black", size = 14,
+                                   face = "bold", angle = 45,
+                                   hjust = 1, vjust = 1),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = "none",
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+LitterBoxPlot
+
+ggsave("~/Desktop/Litter_Microsite_Boxplots.pdf", LitterBoxPlot, width = 14, height = 8)
+
+LitterBoxPlotNoOutliers <- ggplot(mean_depths, aes(x = Microsite_Plotting, y = mean_depth, fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = element_blank(), y = "Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25, outliers = FALSE, na.rm = FALSE) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 14, face = "bold", angle = 45, hjust = 1, vjust = 1),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = c(0.1, 0.9),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+LitterBoxPlotNoOutliers
+
+ggsave("~/Desktop/Litter_Microsite_Boxplots_NoOutliers.pdf", LitterBoxPlotNoOutliers, width = 14, height = 8)
+
+mean_depths_expanded <- mean_depths %>% tidyr::complete(Site, Microsite_Plotting = c("Bare Ground", "Nonliving Retention Elements", "Cactus", "Annual Grasses and Forbs", "Perennial Grasses", "Subshrubs", "Shrubs"), fill = list(mean_depth = NA))
+
+mean_depths_expanded$mean_depth[mean_depths_expanded$Site == "JORN" & mean_depths_expanded$Microsite_Plotting == "Cactus"] <- 0
+
+mean_depths_expanded$Microsite_Plotting <- factor(mean_depths_expanded$Microsite_Plotting,
+                                             levels = c("Bare Ground", "Nonliving Retention Elements", "Cactus", "Annual Grasses and Forbs", "Perennial Grasses", "Subshrubs", "Shrubs"))
+
+LitterBoxPlotSiteNoOutliers <- ggplot(mean_depths_expanded, aes(x = Site, y = mean_depth, fill = Microsite_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = NULL, y = "Mean Litter Depth (mm)", fill = "Site") +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25, outliers = FALSE, na.rm = TRUE) +
+  scale_fill_manual(values = c("#000000", "grey50", "hotpink", "darkgoldenrod1", 
+                               "olivedrab3","deepskyblue", "darkgreen"),
+                               breaks = c("Bare Ground",
+                                          "Nonliving Retention Elements", "Cactus", 
+                                          "Annual Grasses and Forbs", 
+                                          "Perennial Grasses", "Subshrubs",
+                                          "Shrubs")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 14, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = c(0.15, 0.85),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks = element_line(color = "black")) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+
+LitterBoxPlotSiteNoOutliers
+
+ggsave("~/Desktop/Litter_Site_Boxplots_NoOutliers.pdf", LitterBoxPlotSiteNoOutliers, width = 14, height = 8)
+
+```
+
+```{r}
+
+ElevationStats <- mean_depths %>%
+  group_by(Transect) %>%
+  dplyr::summarize(meandepth = mean(mean_depth),
+                 n = n(),
+                 elev = mean(Elevation),
+                 Site = first(Site),
+                 Season = first(Season),
+                 .groups = "drop")
+
+elev_lm <- lm(mean_depth ~ Elevation, data = mean_depths)
+summary(elev_lm)
+
+ElevationStats$Group <- factor(
+  interaction(ElevationStats$Site, ElevationStats$Season),
+  levels = c("JORN.F24", "JORN.S25",
+             "SRER.F24", "SRER.S25",
+             "MOAB.F24", "MOAB.S25",
+             "ONAQ.F24", "ONAQ.S25")
+)
+
+
+elev_depth <- ggplot(ElevationStats, aes(x = elev, y = meandepth,
+                                         fill = Group)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Group)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod4", "darkgoldenrod", "#4D6619", "olivedrab", "sienna4", "sienna2", "darkseagreen4", "darkseagreen3"),
+                    name = NULL, 
+                    breaks = c("JORN.F24", "JORN.S25", "SRER.F24",
+                               "SRER.S25", "MOAB.F24", "MOAB.S25",
+                               "ONAQ.F24", "ONAQ.S25"),
+                    labels = c("JORN: Fall 2024", "JORN: Spring 2025", "SRER: Fall 2024",
+                               "SRER: Spring 2025", "MOAB: Fall 2024", "MOAB: Spring 2025",
+                               "ONAQ: Fall 2024", "ONAQ: Spring 2025")) +
+  scale_color_manual(values = c("darkgoldenrod4", "darkgoldenrod", "#4D6619", "olivedrab", "sienna4", "sienna1", "darkseagreen4", "darkseagreen3"),
+                    name = NULL, 
+                   breaks = c("JORN.F24", "JORN.S25", "SRER.F24",
+                               "SRER.S25", "MOAB.F24", "MOAB.S25",
+                               "ONAQ.F24", "ONAQ.S25"),
+                    labels = c("JORN: Fall 2024", "JORN: Spring 2025", "SRER: Fall 2024",
+                               "SRER: Spring 2025", "MOAB: Fall 2024", "MOAB: Spring 2025",
+                               "ONAQ: Fall 2024", "ONAQ: Spring 2025")) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Group, group = Group,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Elevation (m)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+elev_depth
+
+ggsave("~/Desktop/Litter_Elevation_Regression_NEW.pdf", elev_depth, width = 14, height = 8)
+
+```
+
+```{r}
+
+ElevationStatsAll <- mean_depths %>%
+  group_by(Transect) %>%
+  dplyr::summarize(meandepth = mean(mean_depth),
+                 n = n(),
+                 elev = mean(Elevation),
+                 Site = first(Site),
+                 .groups = "drop")
+
+elev_lm <- lm(mean_depth ~ Elevation, data = mean_depths)
+summary(elev_lm)
+
+elev_depth_all <- ggplot(ElevationStatsAll, aes(x = elev, y = meandepth,
+                                         fill = Site)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab",
+                               "sienna2", "darkseagreen3"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab",
+                               "sienna2", "darkseagreen3"),
+                    name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), breaks = c(0, 5, 10, 15)) +
+  coord_cartesian(ylim = c(0, max(ElevationStatsAll$meandepth, na.rm = TRUE))) +
+  labs(x = "Mean Elevation (m)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+elev_depth_all
+
+ggsave("~/Desktop/Litter_Elevation_Regression_NEW_Combined.pdf", elev_depth_all, width = 14, height = 8)
+
+```
+
+```{r}
+
+quad_mass <- read.csv("~/Desktop/Litter_Quadrat_Sorting_and_Weighing_18Feb2026.csv")
+
+quad_mass <- quad_mass[!is.na(quad_mass$Bag_ID), ]
+
+unique(quad_mass$Litter_type)
+
+quad <- quad_mass %>%
+  filter(!Litter_type %in% c("Invertebrates", "Biocrust", "Moss", "Dung", "invertebrates", "Insect",
+                             "Egg?", "Woood", "Woody Material", "Wood", "Woods", "Cactus"))
+
+quad <- quad %>%
+  filter(!Litter_mass_g < 0)
+
+quad <- quad[!(quad$Bag_ID == "2088" & quad$Litter_type == "Leaves"), ]
+
+QuadStats <- quad %>%
+  group_by(Bag_ID) %>%
+  dplyr::summarize(total_mass_g = sum(Litter_mass_g),
+                   mass_area_g_m2 = total_mass_g*100)
+
+BagIDs <- unique(QuadStats$Bag_ID)
+
+colnames(QuadStats) <- c("BagID", "total_mass_g", "mass_area_g_m2")
+
+quad_samp <- quad_data %>%
+  filter(BagID %in% BagIDs)
+
+quad_fig_data <- merge(QuadStats, quad_samp, by.x = "BagID", by.y = "BagID")
+
+quad_fig_data[, 38:42] <- lapply(quad_fig_data[, 38:42], as.numeric)
+
+QuadDepthStats <- quad_fig_data %>%
+  mutate(mean_depth = rowMeans(select(., Litter_depth_center, Litter_depth_north,
+                                      Litter_depth_east, Litter_depth_south, Litter_depth_west)))
+
+QuadDepthStats <- QuadDepthStats %>%
+  filter(!is.na(mass_area_g_m2))
+
+litter_mass_depth_lm <- lm(mean_depth ~ mass_area_g_m2, data = QuadDepthStats)
+summary(litter_mass_depth_lm)
+
+depth_mass <- ggplot(QuadDepthStats, aes(x = mean_depth, y = mass_area_g_m2)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "forestgreen",
+              fill = "forestgreen") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "forestgreen") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Litter Depth (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) 
+
+depth_mass
+
+ggsave("~/Desktop/Litter_Mass_Depth_Regression_19Feb2026_fixed.pdf", depth_mass, width = 14, height = 6)
+
+
+litter_mass_depth_lm <- lm(mean_depth ~ mass_area_g_m2, data = QuadDepthStats)
+summary(litter_mass_depth_lm)
+
+depth_mass <- ggplot(QuadDepthStats, aes(x = mean_depth, y = mass_area_g_cm2)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "forestgreen",
+              fill = "forestgreen") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "forestgreen") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Litter Depth (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) 
+
+depth_mass
+
+ggsave("~/Desktop/Litter_Mass_Depth_Regression_19Feb2026_fixed.pdf", depth_mass, width = 14, height = 6)
+
+```
+
+```{r}
+
+# fix clear typos for Top_height for JORN
+mean_depths[mean_depths$Top_height == "1002", "Top_height"] <- 100
+mean_depths[mean_depths$Top_height == "705", "Top_height"] <- 70
+mean_depths[mean_depths$Top_height == "401", "Top_height"] <- 40
+
+nonzero_mean_depths <- mean_depths %>%
+  filter(Top_height != 0) %>%
+  filter(mean_depth != 0)
+
+height_depth_lm <- lm(mean_depth ~ Top_height, data = nonzero_mean_depths)
+summary(height_depth_lm)
+
+mean_depths$Group <- factor(
+  interaction(mean_depths$Site, mean_depths$Season),
+  levels = c("JORN.F24", "JORN.S25",
+             "SRER.F24", "SRER.S25",
+             "MOAB.F24", "MOAB.S25",
+             "ONAQ.F24", "ONAQ.S25")
+)
+mean_depths$Site <- factor(mean_depths$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+height_depth_season <- ggplot(mean_depths, aes(x = Top_height, y = mean_depth,
+                                         fill = Group)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Group)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod4", "darkgoldenrod", "#4D6619", "olivedrab", "sienna4", "sienna2", "darkseagreen4", "darkseagreen3"),
+                    name = NULL, 
+                    breaks = c("JORN.F24", "JORN.S25", "SRER.F24",
+                               "SRER.S25", "MOAB.F24", "MOAB.S25",
+                               "ONAQ.F24", "ONAQ.S25"),
+                    labels = c("JORN: Fall 2024", "JORN: Spring 2025", "SRER: Fall 2024",
+                               "SRER: Spring 2025", "MOAB: Fall 2024", "MOAB: Spring 2025",
+                               "ONAQ: Fall 2024", "ONAQ: Spring 2025")) +
+  scale_color_manual(values = c("darkgoldenrod4", "darkgoldenrod", "#4D6619", "olivedrab", "sienna4", "sienna1", "darkseagreen4", "darkseagreen3"),
+                    name = NULL, 
+                   breaks = c("JORN.F24", "JORN.S25", "SRER.F24",
+                               "SRER.S25", "MOAB.F24", "MOAB.S25",
+                               "ONAQ.F24", "ONAQ.S25"),
+                    labels = c("JORN: Fall 2024", "JORN: Spring 2025", "SRER: Fall 2024",
+                               "SRER: Spring 2025", "MOAB: Fall 2024", "MOAB: Spring 2025",
+                               "ONAQ: Fall 2024", "ONAQ: Spring 2025")) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Group, group = Group,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+height_depth_season
+
+height_depth <- ggplot(mean_depths, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+height_depth
+
+ggsave("~/Desktop/Height_Depth_Regression_per_Site.pdf", height_depth, width = 14, height = 6)
+
+nonzero_mean_depths <- nonzero_mean_depths %>%
+  slice(-c(96, 64, 213, 88))
+
+
+height_depth_all <- ggplot(nonzero_mean_depths, aes(x = Top_height, y = mean_depth)) +
+  geom_point(pch = 21, size = 3, color = "black", fill = "forestgreen") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE,
+              color = "black", linewidth = 2.5) +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label),
+                    after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0), breaks = c(0, 100, 200, 300, 400,
+                                                  500, 600)) +
+  scale_y_continuous(expand = c(0, 0), breaks = c(0, 25, 50, 75, 100)) +
+  coord_cartesian(ylim = c(0, max(nonzero_mean_depths$mean_depth, na.rm = TRUE)), xlim = c(0, max(nonzero_mean_depths$Top_height, na.rm = TRUE))) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+height_depth_all
+
+
+ggsave("~/Desktop/Height_Depth_Regression_all_nonzero_depth_height.pdf", height_depth_all, width = 14, height = 6)
+
+```
+
+```{r}
+
+cactus <- mean_depths %>%
+  filter(Microsite_Plotting == "Cactus")
+
+cactus$Site <- factor(cactus$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+cactus_height_depth_lm <- lm(mean_depth ~ Top_height, data = cactus)
+summary(cactus_height_depth_lm)
+
+cactus_height_depth <- ggplot(cactus, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+cactus_height_depth
+
+```
+
+```{r}
+
+annuals <- mean_depths %>%
+  filter(Microsite_Plotting == "Annual Grasses and Forbs")
+
+# fix clear typos for Top_height
+annuals[annuals$Top_height == "335", "Top_height"] <- 35
+annuals[annuals$Top_height == "190", "Top_height"] <- 10
+
+annuals$Site <- factor(annuals$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+annuals_height_depth_lm <- lm(mean_depth ~ Top_height, data = annuals)
+summary(annuals_height_depth_lm)
+
+annuals_height_depth <- ggplot(annuals, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+annuals_height_depth
+
+```
+
+```{r}
+
+perennials <- mean_depths %>%
+  filter(Microsite_Plotting == "Perennial Grasses")
+
+perennials <- perennials %>%
+  filter(!mean_depth == 150.0)
+
+perennials$Site <- factor(perennials$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+perennials_height_depth_lm <- lm(mean_depth ~ Top_height, data = perennials)
+summary(perennials_height_depth_lm)
+
+perennials_height_depth <- ggplot(perennials, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+perennials_height_depth
+
+```
+
+```{r}
+
+subshrubs <- mean_depths %>%
+  filter(Microsite_Plotting == "Subshrubs")
+
+subshrubs$Site <- factor(subshrubs$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+subshrubs_height_depth_lm <- lm(mean_depth ~ Top_height, data = subshrubs)
+summary(subshrubs_height_depth_lm)
+
+subshrubs_height_depth <- ggplot(subshrubs, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+subshrubs_height_depth
+
+```
+
+```{r}
+
+shrubs <- mean_depths %>%
+  filter(Microsite_Plotting == "Shrubs")
+
+shrubs$Site <- factor(shrubs$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+shrubs_height_depth_lm <- lm(mean_depth ~ Top_height, data = shrubs)
+summary(shrubs_height_depth_lm)
+
+shrubs_height_depth <- ggplot(shrubs, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+shrubs_height_depth
+
+```
+
+```{r}
+
+ShrubSpecies <- shrubs %>%
+  group_by(Top_layer_other) %>%
+  summarize(n = n(),
+            mean_height = mean(Top_height))
+
+PRGL <- mean_depths %>%
+  filter(Top_layer_other == "PRGL")
+
+PRGL$Site <- factor(PRGL$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+PRGL_height_depth_lm <- lm(mean_depth ~ Top_height, data = PRGL)
+summary(PRGL_height_depth_lm)
+
+PRGL_height_depth <- ggplot(PRGL, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+PRGL_height_depth
+
+
+ARTR <- mean_depths %>%
+  filter(Top_layer_other == "ARTR")
+
+ARTR$Site <- factor(ARTR$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+ARTR_height_depth_lm <- lm(mean_depth ~ Top_height, data = ARTR)
+summary(ARTR_height_depth_lm)
+
+ARTR_height_depth <- ggplot(ARTR, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+ARTR_height_depth
+
+
+PRVE <- mean_depths %>%
+  filter(Top_layer_other == "PRVE")
+
+PRVE$Site <- factor(PRVE$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+PRVE_height_depth_lm <- lm(mean_depth ~ Top_height, data = PRVE)
+summary(PRVE_height_depth_lm)
+
+PRVE_height_depth <- ggplot(PRVE, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+PRVE_height_depth
+
+
+JUOS <- mean_depths %>%
+  filter(Top_layer_other == "JUOS")
+
+JUOS$Site <- factor(JUOS$Site,
+                                             levels = c("JORN", "SRER", "MOAB", "ONAQ"))
+
+JUOS_height_depth_lm <- lm(mean_depth ~ Top_height, data = JUOS)
+summary(JUOS_height_depth_lm)
+
+JUOS_height_depth <- ggplot(JUOS, aes(x = Top_height, y = mean_depth,
+                                         fill = Site)) +
+  geom_point(pch = 21, size = 5, color = "black") +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, aes(color = Site)) +
+  scale_shape_manual(values = c(21, 22)) +
+  scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  scale_color_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                     breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                     name = NULL) +
+  ggpmisc::stat_poly_eq(
+  aes(color = Site, group = Site,
+      label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Canopy Height (cm)", y = "Mean Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "none",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+JUOS_height_depth
+
+```
+
+```{r}
+
+mean_depths$depth_bin <- cut(
+  mean_depths$mean_depth,
+  breaks = c(-Inf, 0, 1, 2, 5, Inf),
+  labels = c("0", "0–1", "1–2", "2–5", ">5"),
+  right = TRUE,
+  include.lowest = TRUE
+)
+
+
+depth_histogram <- ggplot(mean_depths, aes(x = mean_depth,
+                                           fill = depth_bin)) +
+  geom_bar() +
+  labs(x = "Mean Litter Depth (mm)", y = "Count", fill = "Depth Bin") +
+  xlim(NA, 50) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = c(0.8, 0.8),
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+depth_histogram
+
+ggsave("~/Desktop/Litter_Depth_Bins.pdf", depth_histogram, width = 14, height = 6)
+
+
+mean_depths_2_5 <- mean_depths %>%
+  filter(mean_depth > 2 & mean_depth < 5)
+
+mean_depths_0_2 <- mean_depths %>%
+  filter(mean_depth < 2)
+# install.packages("Hmisc")  # if not already installed
+library(Hmisc)
+
+mean_depths$depth_bin <- cut2(mean_depths$mean_depth, g = 5)  # g = number of groups
+table(mean_depths$depth_bin)
+
+library(dplyr)
+library(stringr)
+
+# Create a summary table showing ranges and counts
+depth_bin_summary <- mean_depths %>%
+  group_by(depth_bin) %>%
+  summarise(
+    count = n(),
+    min_depth = min(mean_depth),
+    max_depth = max(mean_depth)
+  ) %>%
+  arrange(min_depth)
+
+depth_bin_summary
+
+
+
+```
+
+```{r}
+
+library(Hmisc)
+
+mean_depths$height_bin <- cut2(mean_depths$Top_height, g = 8)  # g = number of groups
+table(mean_depths$height_bin)
+
+library(dplyr)
+library(stringr)
+
+# Create a summary table showing ranges and counts
+height_bin_summary <- mean_depths %>%
+  dplyr::group_by(height_bin) %>%
+  dplyr::summarize(
+    count = n(),
+    min_height = min(Top_height),
+    max_height = max(Top_height)
+  ) 
+
+height_bin_summary
+
+
+mean_depths$height_bin <- cut(
+  mean_depths$Top_height,
+  breaks = c(-Inf, 0, 25, 50, 100, Inf),
+  labels = c("0", "0–25", "25-50", "50-100", ">100"),
+  right = TRUE,
+  include.lowest = TRUE
+)
+
+
+height_histogram <- ggplot(mean_depths, aes(x = Top_height,
+                                           fill = height_bin)) +
+  geom_bar() +
+  labs(x = "Top Height (cm)", y = "Count", fill = "Height Bin") +
+  xlim(NA, 200) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = c(0.8, 0.8),
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+height_histogram
+
+ggsave("~/Desktop/Top_Height_Bins.pdf", height_histogram, width = 14, height = 6)
+
+```
+
+```{r}
+
+# nearby_canopies <- mean_depths %>%
+#   filter(!is.na(Nearby_canopy_1))
+# 
+# nearby_canopies_sum <- nearby_canopies %>%
+#   dplyr::summarize(n1 = n() - sum,
+#     n2 = n() - sum(is.na(Nearby_canopy_2)),
+#     n3 = n() - sum(is.na(Nearby_canopy_3)),
+#     n4 = n() - sum(is.na(Nearby_canopy_4)),
+#     n5 = n() - sum(is.na(Nearby_canopy_5))
+#   )
+
+```
+
+```{r}
+
+litter_mass_depth_lm_origin <- lm(mass_area_g_m2 ~ 0 + mean_depth, data = QuadDepthStats)
+summary(litter_mass_depth_lm_origin)
+
+depth_mass <- ggplot(QuadDepthStats, aes(x = mean_depth, y = mass_area_g_m2)) +
+  stat_smooth(method = "lm", formula = y ~ 0 + x, fullrange = FALSE, color = "forestgreen",
+              fill = "forestgreen") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "forestgreen") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ 0 + x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Litter Depth (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) 
+
+depth_mass
+
+ggsave("~/Desktop/Litter_Mass_Depth_Regression_19Feb2026_origin.pdf", depth_mass, width = 14, height = 6)
+
+mean_depths <- mean_depths %>%
+  mutate(mass_estimate_g_m2 = 62*mean_depth)
+
+mass_estimates_summary <- mean_depths %>%
+  group_by(Microsite_Plotting, Site) %>%
+  dplyr::summarize(mean_depth = mean(mean_depth),
+            mass_estimate = mean(mass_estimate),
+            count = n(), .groups = "drop") %>%
+  group_by(Site) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100) %>%
+  dplyr::mutate(prop_mass = proportion*mass_estimate)
+
+mass_estimates_transects <- mean_depths %>%
+  group_by(Microsite_Plotting, Transect, Site) %>%
+  dplyr::summarize(mean_depth = mean(mean_depth),
+            mass_estimate = mean(mass_estimate),
+            count = n(), .groups = "drop") %>%
+  group_by(Transect) %>%
+  dplyr::mutate(proportion = count / sum(count)) %>%
+  dplyr::mutate(percent = proportion*100) %>%
+  dplyr::mutate(prop_mass = proportion*mass_estimate) %>%
+  dplyr::mutate(total_mass = sum(prop_mass))
+
+mean_depths <- mean_depths %>% tidyr::complete(Site, Microsite_Plotting = c("Bare Ground", "Nonliving Retention Elements", "Cactus", "Annual Grasses and Forbs", "Perennial Grasses", "Subshrubs", "Shrubs"), fill = list(mean_depth = NA))
+
+mean_depths$mean_depth[mean_depths$Site == "JORN" & mean_depths$Microsite_Plotting == "Cactus"] <- 0
+
+mean_depths$Microsite_Plotting <- factor(mean_depths$Microsite_Plotting,
+                                             levels = c("Bare Ground", "Nonliving Retention Elements", "Cactus", "Annual Grasses and Forbs", "Perennial Grasses", "Subshrubs", "Shrubs"))
+
+MassBoxPlotSiteNoOutliers <- ggplot(mean_depths,
+                                    aes(x = Site,
+                                        y = mass_estimate,
+                                        fill = Microsite_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = NULL,
+       y = expression("Estimated Nonwoody Litter Mass (mg / cm"^2*")")) +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25, outliers = FALSE, na.rm = FALSE) +
+  scale_fill_manual(values = c("#000000", "grey50", "hotpink", "darkgoldenrod1", 
+                               "olivedrab3","deepskyblue", "darkgreen"),
+                               breaks = c("Bare Ground",
+                                          "Nonliving Retention Elements", "Cactus", 
+                                          "Annual Grasses and Forbs", 
+                                          "Perennial Grasses", "Subshrubs",
+                                          "Shrubs")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 14, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = c(0.15, 0.85),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks = element_line(color = "black")) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+  
+MassBoxPlotSiteNoOutliers
+
+ggsave("~/Desktop/Litter_Mass_Est_Site_Boxplots_NoOutliers.pdf", MassBoxPlotSiteNoOutliers, width = 14, height = 8)
+
+  
+```
+
+```{r}
+
+ProportionalMass <- ggplot(mass_estimates_transects,
+                                  aes(x = Site,
+                                        y = prop_mass,
+                                        fill = Microsite_Plotting)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = NULL,
+       y = expression("Estimated Nonwoody Litter (g/m"^2*")")) +
+  geom_boxplot(position = position_dodge2(width = 0.9, preserve = "single"),
+           color = "black",
+           linewidth = 0.25, outliers = FALSE, na.rm = FALSE) +
+  scale_fill_manual(values = c("#000000", "grey50", "hotpink", "darkgoldenrod1", 
+                               "olivedrab3","deepskyblue", "darkgreen"),
+                               breaks = c("Bare Ground",
+                                          "Nonliving Retention Elements", "Cactus", 
+                                          "Annual Grasses and Forbs", 
+                                          "Perennial Grasses", "Subshrubs",
+                                          "Shrubs")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  ggprism::theme_prism(base_fontface = "plain", base_line_size = 0.75) +
+  theme(
+    axis.text.x = element_text(color = "black", size = 14, face = "bold"),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = c(0.15, 0.85),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks = element_line(color = "black")) +
+  scale_x_discrete(guide = ggprism::guide_prism_bracket())
+  
+ProportionalMass
+
+ggsave("~/Desktop/Litter_Mass_Est_Site_Boxplots_NoOutliers.pdf", ProportionalMass, width = 14, height = 8)
+
+
+```
+
+```{r}
+
+mass_estimates_summary_site <- mass_estimates_summary %>%
+  group_by(Site) %>%
+  dplyr::summarize(total_mass = sum(mass_estimate),
+                   total_prop_mass = sum(prop_mass))
+
+AI_mean_site <- mean_depths %>%
+  group_by(Site) %>%
+  dplyr::summarize(mean_mass_est = mean(mass_estimate),
+                   meanAI = mean(AI))
+
+mass_estimates_summary_site$MAP <- c(271.2, 346.2, 320.0, 288.0)
+mass_estimates_summary_site$MAT <- c(15.7, 19.3, 10.1, 9.0)
+
+mass_estimates_transects <- merge(mass_estimates_transects, Lat_Long_AI, by = "Transect")
+
+mass_estimates_site <- mass_estimates_transects %>%
+  group_by(Site) %>%
+  dplyr::summarize(mean_mass_est = mean(mass_estimate),
+                   meanAI = mean(AI))
+
+Lat_Long_AI_summary <- mass_estimates_transects %>%
+  group_by(Site) %>%
+  dplyr::summarize(meanAI = mean(AI))
+
+mass_estimates_summary_site$I_DM <- mass_estimates_summary_site$MAP/(mass_estimates_summary_site$MAT + 10)
+
+mass_estimates_summary_site$Site <- as.factor(mass_estimates_summary_site$Site)
+
+mass_estimates_transects$Site <- factor(mass_estimates_transects$Site,
+                                             levels = c("JORN", "ONAQ", "SRER", "MOAB"))
+
+Mass_AI <- ggplot(mass_estimates_transects,
+                                    aes(x = Site,
+                                        y = total_mass,
+                                        fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(
+       y = expression("Estimated Nonwoody Litter (g/m"^2*")")) +
+  geom_boxplot(position = position_dodge2(width = 0.9,
+                                        preserve = "single"),
+               color = "black", linewidth = 0.25, outliers = TRUE, na.rm = FALSE) +
+ scale_fill_manual(values = c("darkgoldenrod", "darkseagreen3", "olivedrab", "sienna2"),
+                    breaks = c("JORN","ONAQ", "SRER", "MOAB"),
+                    name = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+  
+Mass_AI
+
+ggsave("~/Desktop/Litter_Mass_Site_Boxplot.pdf", Mass_AI, width = 8, height = 6)
+
+
+```
+
+```{r}
+mean_depths$MAP <- NA
+mean_depths$MAT <- NA
+
+mean_depths[mean_depths$Site == "JORN", "MAP"] <- 271.2
+mean_depths[mean_depths$Site == "SRER", "MAP"] <- 346.2
+mean_depths[mean_depths$Site == "MOAB", "MAP"] <- 320.0
+mean_depths[mean_depths$Site == "ONAQ", "MAP"] <- 288.0
+
+mean_depths[mean_depths$Site == "JORN", "MAT"] <- 15.7
+mean_depths[mean_depths$Site == "SRER", "MAT"] <- 19.3
+mean_depths[mean_depths$Site == "MOAB", "MAT"] <- 10.1
+mean_depths[mean_depths$Site == "ONAQ", "MAT"] <- 9.0
+
+mean_depths$mass_est_g_m2 <- mean_depths$mass_estimate * 10
+
+Mass_MAP <- ggplot(mean_depths,
+                   aes(x = MAP,
+                       y = mass_est_g_m2,
+                       fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Mean Annual Precipitation (mm)",
+       y = expression("Estimated Nonwoody Litter Mass (g/m"^2*")")) +
+ geom_boxplot(position = position_dodge2(width = 0.9,
+                                         preserve = "single"),
+           color = "black",
+           linewidth = 0.25, outliers = FALSE, na.rm = TRUE) +
+ scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+  
+Mass_MAP
+
+ggsave("~/Desktop/Litter_Mass_vs_MAP.pdf", Mass_MAP, width = 8, height = 6)
+
+```
+
+```{r}
+
+Mass_MAP_prop <- ggplot(mass_estimates_summary_site,
+                                    aes(x = MAP,
+                                        y = total_prop_mass,
+                                        fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Mean Annual Precipitation (mm)",
+       y = expression("Estimated Nonwoody Litter Mass (mg/cm"^2*")")) +
+  geom_point(position = position_dodge2(width = 0.9,
+                                        preserve = "single"),
+             pch = 21, size = 8, color = "black") +
+ scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+  
+Mass_MAP_prop
+
+ggsave("~/Desktop/Litter_Mass_vs_MAP_proportional.pdf", Mass_MAP_prop, width = 8, height = 6)
+
+```
+
+```{r}
+
+Mass_Transects <- ggplot(mass_estimates_summary_site,
+                                    aes(x = MAP,
+                                        y = total_prop_mass,
+                                        fill = Site)) +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = "Mean Annual Precipitation (mm)",
+       y = expression("Estimated Nonwoody Litter Mass (mg/cm"^2*")")) +
+  geom_point(position = position_dodge2(width = 0.9,
+                                        preserve = "single"),
+             pch = 21, size = 8, color = "black") +
+ scale_fill_manual(values = c("darkgoldenrod", "olivedrab", "sienna2", "darkseagreen3"),
+                    breaks = c("JORN", "SRER", "MOAB", "ONAQ"),
+                    name = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+  
+Mass_MAP_prop
+
+ggsave("~/Desktop/Litter_Mass_vs_MAP_proportional.pdf", Mass_MAP_prop, width = 8, height = 6)
+
+```
+
+```{r}
+
+mass_estimates_transects$prop_mass_g_m2 <- mass_estimates_transects$prop_mass * 10
+
+mass_estimates_transects_summary <- mass_estimates_transects %>%
+  group_by(Transect, Site) %>%
+  dplyr::summarize(mean_mass = mean(mass_est_g_m2),
+                   elev = mean(Elevation), .groups = "drop")
+  
+
+MassTransects <- ggplot(mass_estimates_transects_summary,
+                        aes(x = elev,
+                            y = mean_mass)) +
+  facet_wrap(~ Site, scales = "free_x") +
+  guides(fill = guide_legend(title.position = "top")) +
+  labs(x = NULL,
+       y = expression("Estimated Nonwoody Litter Mass (g/m"^2*")")) +
+  geom_point(pch = 21, color = "black") +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  theme_linedraw() +
+  theme(strip.background = element_rect(color = "black", fill = "white"),
+    strip.text = element_text(size = 18, color = "black"),
+    axis.text.x = element_text(color = "black", size = 11,
+                               angle = 90, hjust = 1,
+                               vjust = 0.5),
+    axis.text.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "black", size = 16),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    axis.title.x = element_text(color = "black", size = 18),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    axis.ticks.y = element_line(color = "black", linewidth = 0.75),
+    axis.ticks.x = element_line(color = "black", linewidth = 0.75)) +
+  scale_y_continuous(expand = c(0, 0))
+  
+MassTransects
+
+ggsave()
+
+```
+
+```{r}
+
+mass_estimates_transects_only <- mass_estimates_transects %>%
+  group_by(Transect) %>%
+  dplyr::summarize(mass_estimate = mean(mass_estimate),
+                   prop_mass_estimate = sum(prop_mass)
+                   )
+
+mass_estimates_transects_only <- merge(mass_estimates_transects_only, Lat_Long_AI, by = "Transect")
+
+mass_estimates_transects_only_noJORN <- mass_estimates_transects_only %>%
+  filter(!str_starts(Transect, "JORN"))
+
+AI_lm <- lm(mass_estimate ~ AI, data = mass_estimates_transects_only)
+summary(AI_lm)
+
+MAT_lm <- lm(mass_estimate ~ MAT, data = mass_estimates_transects_only)
+summary(MAT_lm)
+
+MAP_lm <- lm(mass_estimate ~ MAP, data = mass_estimates_transects_only)
+summary(MAP_lm)
+
+GrowSeason_lm <- lm(mass_estimate ~ GrowSeason, data = mass_estimates_transects_only)
+summary(GrowSeason_lm)
+
+
+
+AI_lm_pr <- lm(prop_mass_estimate ~ AI, data = mass_estimates_transects_only)
+summary(AI_lm_pr)
+
+MAT_lm_pr <- lm(prop_mass_estimate ~ MAT, data = mass_estimates_transects_only)
+summary(MAT_lm_pr)
+
+MAP_lm_pr <- lm(prop_mass_estimate ~ MAP, data = mass_estimates_transects_only)
+summary(MAP_lm_pr)
+
+GrowSeason_lm_pr <- lm(prop_mass_estimate ~ GrowSeason, data = mass_estimates_transects_only)
+summary(GrowSeason_lm_pr)
+
+AI_littermass <- ggplot(mass_estimates_transects_only, aes(x = AI,
+                                                           y = prop_mass_estimate)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "darkred",
+              fill = "darkred") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "darkred") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Aridity Index",
+     y = expression("Microsite-Weighted Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+AI_littermass
+
+ggsave("AI_v_MicrositeWeightedMass.pdf", plot = last_plot(), height = 8, width = 12)
+
+
+MAP_littermass <- ggplot(mass_estimates_transects_only, aes(x = MAP,
+                                                           y = mass_estimate_g_cm2)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "navy",
+              fill = "navy") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "navy") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Annual Precipitation (mm)",
+     y = expression("Nonwoody Litter (g/cm"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+MAP_littermass
+
+ggarrange(AI_littermass, MAP_littermass, nrow = 2)
+
+ggsave("LitterMass_v_AI_MAP.pdf", plot = last_plot(), height = 10, width = 8)
+
+
+
+AI_littermass_noJORN <- ggplot(mass_estimates_transects_only_noJORN, aes(x = AI,
+                                                           y = mass_estimate_g_cm2)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "darkred",
+              fill = "darkred") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "darkred") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Aridity Index",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+AI_littermass_noJORN
+
+
+MAP_littermass_noJORN <- ggplot(mass_estimates_transects_only_noJORN, aes(x = MAP,
+                                                           y = mass_estimate_g_cm2)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "navy",
+              fill = "navy") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "navy") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Annual Precipitation (mm)",
+     y = expression("Nonwoody Litter (g/cm"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+MAP_littermass_noJORN
+
+ggarrange(AI_littermass_noJORN, MAP_littermass_noJORN, nrow = 2)
+
+ggsave("LitterMass_v_AI_MAP_noJORN.pdf", plot = last_plot(), height = 10, width = 8)
+
+
+GrowSeason_littermass <- ggplot(mass_estimates_transects_only, aes(x = GrowSeason,
+                                                           y = mass_estimate_g_cm2)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "blue",
+              fill = "blue") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "blue") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "June-September Precipitation (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+GrowSeason_littermass
+
+ggsave("LitterMass_v_GrowingSeasonPrecip.pdf", plot = last_plot())
+
+mean_canopy_height_transects <- mean_depths %>%
+  group_by(Transect) %>%
+  summarize(mean_canopy_height = mean(Top_height))
+
+mass_estimates_transects_only <- merge(mass_estimates_transects_only, mean_canopy_height_transects, by = "Transect")
+
+Canopy_littermass <- ggplot(mass_estimates_transects_only, aes(x = mean_canopy_height,
+                                                           y = prop_mass_estimate)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "olivedrab",
+              fill = "olivedrab") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "olivedrab") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Canopy Height (cm)",
+     y = expression("Microsite-Weighted Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+Canopy_littermass
+
+ggsave("LitterMass_v_MeanCanopyHeight.pdf", plot = last_plot(), height = 8, width = 12)
+
+
+Canopy_AI <- ggplot(mass_estimates_transects_only, aes(x = AI,
+                                                           y = mean_canopy_height)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "olivedrab",
+              fill = "olivedrab") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "olivedrab") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Aridity Index",
+     y = "Mean Canopy Height (cm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+Canopy_AI
+
+ggsave("AI_v_MeanCanopyHeight.pdf", plot = last_plot())
+mass_estimates_transects_only <- merge(mass_estimates_transects_only, Lat_Long_AI, by = "Transect")
+
+
+Canopy_AI <- ggplot(mass_estimates_transects_only, aes(x = AI,
+                                                           y = mean_canopy_height)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "olivedrab",
+              fill = "olivedrab") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "olivedrab") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold",
+  color = "olivedrab" # <-- makes text bold
+) +
+  stat_smooth(method = "lm", formula = y ~ poly(x, 2, raw = TRUE), se = TRUE,
+              color = "grey", fill = "grey") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ poly(x, 2, raw = TRUE),
+  parse = TRUE,
+  size = 5,                # font size
+  fontface = "bold",
+  label.x = 0.05,
+  label.y = 0.85
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Aridity Index",
+     y = "Mean Canopy Height (cm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+Canopy_AI
+
+ggsave("AI_v_MeanCanopyHeight.pdf", plot = last_plot())
+
+
+
+Canopy_AI_noJORN <- ggplot(mass_estimates_transects_only_noJORN, aes(x = AI,
+                                                           y = mean_canopy_height)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "olivedrab",
+              fill = "olivedrab") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "olivedrab") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Aridity Index",
+     y = "Mean Canopy Height (cm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+Canopy_AI_noJORN
+
+ggsave("AI_v_MeanCanopyHeight_noJORN.pdf", plot = last_plot())
+
+
+
+
+
+
+
+
+```
+
+```{r glmm}
+
+mass_model <- lm(prop_mass_estimate ~ AI + mean_canopy_height, data = mass_estimates_transects_only)
+summary(mass_model)
+
+```

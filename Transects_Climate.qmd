@@ -1,0 +1,104 @@
+---
+title: "Climate_Indices_Transects"
+format: html
+editor: visual
+---
+
+```{r}
+
+library(tidyverse)
+library(terra)
+library(raster)
+library(maps)
+library(tidyterra)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(geodata)
+library(grid)
+
+```
+
+```{r load_climate_data}
+
+# Read in the ET and AI data from GlobalAI-PET v3
+
+# import ET Geotiff into a spat raster file with terra
+ET_raster_data <- rast("~/Downloads/Global-AI_ET0__annual_v3_1/et0_v31_yr.tif")
+
+# import AI Geotiff into a spat raster file with terra
+AI_raster_data <- rast("~/Downloads/Global-AI_ET0__annual_v3_1/ai_v31_yr.tif")
+
+# AI values in the database are multiplied by 1000 for data distribution speed - these are corrected here
+AI_raster_data1 <- app(AI_raster_data, fun = function(x) x * 0.0001) 
+
+# Read in the relevant annual mean "bioclimatic" data from WorldClim2.1
+# import MAT Geotiff into a spat raster file with terra. MAT is BIO1 bioclimatic variable.
+MAT_raster_data <- rast("~/Downloads/wc2/wc2.1_30s_bio_1.tif")
+
+# import MAP Geotiff into a spat raster file with terra. MAP is BIO12 bioclimatic variable.
+MAP_raster_data <- rast("~/Downloads/wc2/wc2.1_30s_bio_12.tif")
+
+# PRISM - June 2024
+PRISM_raster_June <- rast("~/Downloads/prism_ppt_us_30s_202406/prism_ppt_us_30s_202406.tif")
+
+# PRISM - July 2024
+PRISM_raster_July <- rast("~/Downloads/prism_ppt_us_30s_202407/prism_ppt_us_30s_202407.tif")
+
+# PRISM - August 2024
+PRISM_raster_Aug <- rast("~/Downloads/prism_ppt_us_30s_202408/prism_ppt_us_30s_202408.tif")
+
+# PRISM - September 2024
+PRISM_raster_Sept <- rast("~/Downloads/prism_ppt_us_30s_202409/prism_ppt_us_30s_202409.tif")
+
+
+```
+
+```{r}
+
+# Extract data from GlobalAI-PET v3 for the transect locations
+Lat_Long <- Transect_locations[, c("mean_long", "mean_lat")]
+
+Lat_Long_AI <- Transect_locations |>
+  mutate(PET = extract(ET_raster_data, Lat_Long),
+    AI_mult = extract(AI_raster_data, Lat_Long),
+    AI = extract(AI_raster_data1, Lat_Long),
+    MAT = extract(MAT_raster_data, Lat_Long),
+    MAP = extract(MAP_raster_data, Lat_Long),
+    June = extract(PRISM_raster_June, Lat_Long),
+    July = extract(PRISM_raster_July, Lat_Long),
+    Aug = extract(PRISM_raster_Aug, Lat_Long),
+    Sept = extract(PRISM_raster_Sept, Lat_Long)
+  ) 
+
+# Clean up the dataframe
+Lat_Long_AI <- do.call(data.frame, Lat_Long_AI)
+
+Lat_Long_AI <- Lat_Long_AI |>
+  rename(PET = PET.pet_pm_sr_yr,
+         AI = AI.lyr.1,
+         MAT = MAT.wc2.1_30s_bio_1,
+         MAP = MAP.wc2.1_30s_bio_12,
+         June = June.prism_ppt_us_30s_202406,
+         July = July.prism_ppt_us_30s_202407,
+         Aug = Aug.prism_ppt_us_30s_202408,
+         Sept = Sept.prism_ppt_us_30s_202409) |>
+  dplyr::select(-PET, -PET.ID, -AI_mult.ID, -AI_mult.awi_pm_sr_yr, -AI.ID, -MAT.ID, -MAP.ID)
+
+Lat_Long_AI <- Lat_Long_AI %>%
+  mutate(GrowSeason = June + July + Aug + Sept)
+
+# Add climate class to df
+Lat_Long_AI <- Lat_Long_AI |>
+  mutate(
+    climate_class = case_when(
+      AI < 0.03 ~ "hyperarid",
+      AI >= 0.03 & AI < 0.2 ~ "arid",
+      AI >= 0.2 & AI < 0.5 ~ "semiarid",
+      AI >= 0.5 & AI < 0.65 ~ "drysubhumid",
+      AI > 0.65 ~ "humid",
+      TRUE ~ NA_character_  # Handles other cases or missing values
+    )
+  )
+
+```
