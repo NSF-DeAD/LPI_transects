@@ -1,0 +1,725 @@
+---
+title: "Driver Exploration"
+format: html
+editor: visual
+---
+
+write a README
+
+```{r setup}
+
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(tidyverse)
+library(terra)
+library(raster)
+library(maps)
+library(tidyterra)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(geodata)
+library(grid)
+
+```
+
+```{r import_L2}
+
+prelim_all_data <- read.csv("~/Desktop/Prelim_DeAD_LPI_data.csv")
+
+prelim_all_data <- prelim_all_data %>%
+  mutate(Transect = if_else(Site == "SRER" & Season == "S25",
+                            paste0(Transect, "S25"),
+                            Transect))
+```
+
+```{r lil_cleanup}
+
+all_mic <- prelim_all_data
+
+# Make a new column
+all_mic$Microsite_Plotting <- all_mic$Microsite
+
+# if Top_layer is "L-PGRASS" or "D-PGRASS"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-PGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-PGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# if Top_layer is "L-SHRUB" or "D-SHRUB"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# if Top_layer is "NONE"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "NONE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Bare Ground"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "N") {
+    all_mic$Microsite_Plotting[i] <- "Open: Bare Ground"}
+}
+
+# if Top_layer is "D-FORB" or "D-AGRASS"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-FORB") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-AGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-FORB") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-AGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# cactus
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-CACT") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-CACT") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "OP") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CY") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+# ACAN
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ACAN") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ACHY
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ACHY") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# AGCR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "AGCR") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# ARTR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ARTR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ATCA
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ATCA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ATCO
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ATCO") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# BOER
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BOER") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# BOGR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BOGR") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# BRTE
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BRTE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# BRTR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BRTR") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# CAER
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CAER") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+# CEPA
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CEPA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EP") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPIP") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPTO") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPVI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ERLE") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ERNA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "FEWI") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "FOSP") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "GUSA") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "HAGL") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "HIJA") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ISTE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "JUOS") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "KRLA") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "LATR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PAFL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PRGL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PRVE") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PSSP") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PUST") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PUTR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SAMI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SATR") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SAVE") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SEGR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SOEL") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SP") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNK") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNK1") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNKNOWN") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "YUEL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-SUBS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-SUBS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+all_mic[all_mic$Transect=="SRER001" & all_mic$Remarks == "8", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="SRER025" & all_mic$Remarks == "40", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="MOAB107" & all_mic$Remarks == "48", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="JORN141" & all_mic$Remarks == "25", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="ONAQ049" & all_mic$Remarks == "9", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="MOAB006" & all_mic$Remarks == "13", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic[all_mic$Transect=="MOAB010" & all_mic$Remarks == "22", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic[all_mic$Transect=="ONAQ012" & all_mic$Remarks == "7", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Shrub Canopy"] <- "Canopy: Shrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Perennial Grass Canopy"] <- "Canopy: Perennial Grasses"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Cactus Canopy"] <- "Canopy: Cactus"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "ROCK"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "ROCK_CANOPY"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_ROCK"] <- "Downed Wood or Rocks"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "WOOD"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "WOOD_CANOPY"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_WOOD"] <- "Downed Wood or Rocks"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "WASH"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "WASH_CANOPY"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_WASH"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "ROCK_WASH"] <- "Wash or Rill"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "RILL"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_RILL"] <- "Wash or Rill"
+
+# rename
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "HOLE"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "AHILL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "BURROW"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "GAMETRAIL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "COWPRINT"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "TCAST"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "AHILL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "ANTHILL"] <- "Animal Structures"
+
+all_mic$Litter[all_mic$Litter == "N"] <- "NONE"
+
+all_mic$Litter_depth_center <- as.numeric(all_mic$Litter_depth_center)
+all_mic$Litter_depth_center[is.na(all_mic$Litter_depth_center)] <- 0
+
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Wash or Rill"] <- "Washes or Rills"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Annual Grasses and Forbs"] <- "Annual Grasses and Forbs"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Subshrubs"] <- "Subshrubs"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Bare Ground"] <- "Bare Ground"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Cactus"] <- "Cactus"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Perennial Grasses"] <- "Perennial Grasses"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Shrubs"] <- "Shrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Washes or Rills"] <- "Nonliving Retention Elements"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Animal Structures"] <- "Nonliving Retention Elements"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Downed Wood or Rocks"] <- "Nonliving Retention Elements"
+
+```
+
+```{r mean_transects}
+
+all_mic_means <- all_mic %>%
+  rowwise() %>%
+  mutate(
+    mean_depth = mean(unlist(across(c(Litter_depth_center,
+                                      Litter_depth_north,
+                                      Litter_depth_east,
+                                      Litter_depth_south,
+                                      Litter_depth_west))), na.rm = TRUE)
+    )
+
+write.csv(all_mic_means, "DeAD_LPI_L2_prelim_data.csv", row.names = FALSE)
+
+Transect_locations <- prelim_all_data %>%
+  group_by(Transect) %>%
+  summarize(mean_lat = mean(Latitude),
+            mean_long = mean(Longitude),
+            mean_elev = mean(Elevation))
+
+```
+
+```{r load_climate_data}
+
+# Read in the ET and AI data from GlobalAI-PET v3
+
+# import ET Geotiff into a spat raster file with terra
+ET_raster_data <- rast("~/Downloads/Global-AI_ET0__annual_v3_1/et0_v31_yr.tif")
+
+# import AI Geotiff into a spat raster file with terra
+AI_raster_data <- rast("~/Downloads/Global-AI_ET0__annual_v3_1/ai_v31_yr.tif")
+
+# AI values in the database are multiplied by 1000 for data distribution speed - these are corrected here
+AI_raster_data1 <- app(AI_raster_data, fun = function(x) x * 0.0001) 
+
+# Read in the relevant annual mean "bioclimatic" data from WorldClim2.1
+# import MAT Geotiff into a spat raster file with terra. MAT is BIO1 bioclimatic variable.
+MAT_raster_data <- rast("~/Downloads/wc2/wc2.1_30s_bio_1.tif")
+
+# import MAP Geotiff into a spat raster file with terra. MAP is BIO12 bioclimatic variable.
+MAP_raster_data <- rast("~/Downloads/wc2/wc2.1_30s_bio_12.tif")
+
+# PRISM - June 2024
+PRISM_raster_June <- rast("~/Downloads/prism_ppt_us_30s_202406/prism_ppt_us_30s_202406.tif")
+
+# PRISM - July 2024
+PRISM_raster_July <- rast("~/Downloads/prism_ppt_us_30s_202407/prism_ppt_us_30s_202407.tif")
+
+# PRISM - August 2024
+PRISM_raster_Aug <- rast("~/Downloads/prism_ppt_us_30s_202408/prism_ppt_us_30s_202408.tif")
+
+# PRISM - September 2024
+PRISM_raster_Sept <- rast("~/Downloads/prism_ppt_us_30s_202409/prism_ppt_us_30s_202409.tif")
+
+
+```
+
+```{r}
+
+# Extract data from GlobalAI-PET v3 for the transect locations
+Lat_Long <- Transect_locations[, c("mean_long", "mean_lat")]
+
+Lat_Long_AI <- Transect_locations |>
+  mutate(PET = extract(ET_raster_data, Lat_Long),
+    AI_mult = extract(AI_raster_data, Lat_Long),
+    AI = extract(AI_raster_data1, Lat_Long),
+    MAT = extract(MAT_raster_data, Lat_Long),
+    MAP = extract(MAP_raster_data, Lat_Long),
+    June = extract(PRISM_raster_June, Lat_Long),
+    July = extract(PRISM_raster_July, Lat_Long),
+    Aug = extract(PRISM_raster_Aug, Lat_Long),
+    Sept = extract(PRISM_raster_Sept, Lat_Long)
+  ) 
+
+# Clean up the dataframe
+Lat_Long_AI <- do.call(data.frame, Lat_Long_AI)
+
+Lat_Long_AI <- Lat_Long_AI |>
+  rename(PET = PET.pet_pm_sr_yr,
+         AI = AI.lyr.1,
+         MAT = MAT.wc2.1_30s_bio_1,
+         MAP = MAP.wc2.1_30s_bio_12,
+         June = June.prism_ppt_us_30s_202406,
+         July = July.prism_ppt_us_30s_202407,
+         Aug = Aug.prism_ppt_us_30s_202408,
+         Sept = Sept.prism_ppt_us_30s_202409) |>
+  dplyr::select(-PET, -PET.ID, -AI_mult.ID, -AI_mult.awi_pm_sr_yr, -AI.ID, -MAT.ID, -MAP.ID)
+
+Lat_Long_AI <- Lat_Long_AI %>%
+  mutate(GrowSeason = June + July + Aug + Sept)
+
+# Add climate class to df
+Lat_Long_AI <- Lat_Long_AI |>
+  mutate(
+    climate_class = case_when(
+      AI < 0.03 ~ "hyperarid",
+      AI >= 0.03 & AI < 0.2 ~ "arid",
+      AI >= 0.2 & AI < 0.5 ~ "semiarid",
+      AI >= 0.5 & AI < 0.65 ~ "drysubhumid",
+      AI > 0.65 ~ "humid",
+      TRUE ~ NA_character_  # Handles other cases or missing values
+    )
+  )
+
+```
+
+```{r}
+
+Lat_Long_AI_trimmed <- Lat_Long_AI %>%
+  select(c("Transect", "AI", "MAT", "MAP"))
+
+all_mic_means_clim <- merge(Lat_Long_AI_trimmed, all_mic_means, by = "Transect")
+
+write.csv(all_mic_means_clim, "DeAD_LPI_L2_prelim_data_with_clim.csv", row.names = FALSE)
+
+```
+
+```{r}
+
+transect_means <- all_mic_means_clim %>%
+  group_by(Transect) %>%
+  dplyr::summarize(meandepth = mean(mean_depth),
+                 n = n(),
+                 elev = mean(Elevation),
+                 Site = first(Site),
+                 AI = first(AI),
+                 MAT = first(MAT),
+                 MAP = first(MAP),
+                 meanheight = mean(Top_height),
+                 .groups = "drop")
+
+transect_means_mic <- all_mic_means_clim %>%
+  group_by(Transect, Microsite_Plotting) %>%
+  dplyr::summarize(n = n(),
+                   mean_mic_height = mean(Top_height)) %>%
+  group_by(Transect) %>%
+  dplyr::mutate(prop_microsite = n / sum(n))
+
+transect_means_shrub <- merge(transect_means_mic, transect_means, by = "Transect")
+
+transect_means_shrub <- transect_means_shrub %>%
+  filter(Microsite_Plotting == "Shrubs")
+
+transect_means_bare <- transect_means_mic %>%
+  filter(Microsite_Plotting == "Bare Ground") %>%
+  select(c("Transect", "prop_microsite"))
+
+colnames(transect_means_bare) <- c("Transect", "Prop_Bare")
+
+transect_means <- merge(transect_means, transect_means_bare, transect_means_shrub, by = "Transect")
+
+ggplot(transect_means_shrub, aes(x = mean_mic_height)) +
+  geom_histogram() +
+  scale_x_log10()
+# need to log transform mean shrub height - I think?
+
+ggplot(transect_means_shrub, aes(x = prop_microsite)) +
+  geom_histogram() +
+  scale_x_log10()
+# need to log transform microsite proportion, too?
+
+ggplot(transect_means_shrub, aes(x = meandepth)) +
+  geom_histogram() +
+  scale_x_log10()
+# also need to log transform mean depths - I think?
+
+transect_means_shrub <- merge(transect_means_bare, transect_means_shrub,
+                              by = "Transect")
+
+transect_means_shrub_log <- transect_means_shrub %>%
+  mutate(logDepth = log10(meandepth),
+         logAI = log10(AI),
+         logShrubHeight = log10(mean_mic_height),
+         logPropShrub = log10(prop_microsite),
+         logPropBare = log10(Prop_Bare)) %>%
+  mutate(logDepth_snv = (logDepth - mean(logDepth))/sd(logDepth),
+         logAI_snv = (logAI - mean(logAI))/sd(logAI),
+         logShrubHeight_snv = (logShrubHeight - mean(logShrubHeight))/sd(logShrubHeight),
+         logPropShrub_snv = (logPropShrub - mean(logPropShrub))/sd(logPropShrub),
+         logPropBare_snv = (logPropBare - mean(logPropBare))/sd(logPropBare))
+
+
+# 
+shrub_lm_height <- lm(logDepth_snv ~ logShrubHeight_snv + logPropShrub_snv + logAI_snv, data = transect_means_shrub_log)
+
+shrub_lm_height
+summary(shrub_lm_height)
+
+
+shrub_bare_lm_height <- lm(logDepth_snv ~ logShrubHeight_snv + logPropShrub_snv + logPropBare_snv + logAI_snv, data = transect_means_shrub_log)
+
+shrub_bare_lm_height
+summary(shrub_bare_lm_height)
+
+```
+
+```{r histograms}
+#| fig-height: 6
+#| fig-width: 4
+
+ggplot(all_mic_means |>
+         mutate(mean_depth = if_else(mean_depth < 0.2, 0.05, mean_depth)),
+       aes(x = mean_depth)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_grid(Microsite_Plotting~Site, scales='free_y')
+
+
+```
+
+```{r}
+
+litter_depth_hist <- ggplot(transect_means, aes(x = meandepth)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+litter_depth_hist
+
+# no log transformation
+elevation_hist <- ggplot(transect_means, aes(x = elev)) +
+  geom_histogram() +
+  facet_wrap(~ Site, scales = "free_y")
+
+elevation_hist
+
+AI_hist <- ggplot(transect_means, aes(x = AI)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+AI_hist
+
+MAP_hist <- ggplot(transect_means, aes(x = MAP)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+MAP_hist
+
+MAT_hist <- ggplot(transect_means, aes(x = MAT)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+MAT_hist
+
+height_hist <- ggplot(transect_means, aes(x = meanheight)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+height_hist
+
+
+```
+
+```{r}
+
+transect_means_log <- transect_means %>%
+  mutate(logDepth = log10(meandepth),
+         logAI = log10(AI),
+         logMAT = log10(MAT),
+         logMAP = log10(MAP),
+         logHeight = log10(meanheight),
+         logPropBare = log10(Prop_Bare)) %>%
+  mutate(logDepth_snv = (logDepth - mean(logDepth))/sd(logDepth),
+         logAI_snv = (logAI - mean(logAI))/sd(logAI),
+         logHeight_snv = (logHeight - mean(logHeight))/sd(logHeight),
+         logPropBare_snv = (logPropBare - mean(logPropBare))/sd(logHeight))
+
+library("lme4")
+
+# with site as random effect
+mixed_model <- lmer(logDepth_snv ~ logAI_snv + logHeight_snv + (1 | Site), data = transect_means_log)
+
+mixed_model
+summary(mixed_model)
+
+# no random effects
+mixed_model_lm <- lm(logDepth_snv ~ logAI_snv + logHeight_snv, data = transect_means_log)
+
+mixed_model_lm
+summary(mixed_model_lm)
+
+# no random effects
+mixed_model_bare_lm <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logPropBare_snv, data = transect_means_log)
+
+mixed_model_bare_lm
+summary(mixed_model_bare_lm)
+
+# only height
+mixed_model_lm_height <- lm(logDepth_snv ~ logHeight_snv, data = transect_means_log)
+
+mixed_model_lm_height
+summary(mixed_model_lm_height)
+```
