@@ -82,6 +82,8 @@ There is now 1 csv file containing data for all 10 transects. This is considered
 # HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
 #SRER_L1_data <- read.csv("")
 
+SRER_L1_data <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L1_Spring_2025_Data.csv")
+
 ```
 
 ### Clean Level 1 Data
@@ -277,7 +279,7 @@ unique(SRER_trimmed_data$Microsite_other)
 
 ```{r SRER_clean_Top_height}
 
-# create a data frame for rows with an "NA" for Microsite
+# create a data frame for rows with an "NA" for Top_height
 SRER_NA_Top_height <- subset(SRER_trimmed_data, is.na(Top_height))
 
 # there are 6 rows that have an "NA" for Top_height
@@ -411,7 +413,7 @@ JORN_L0_data_files <- dir("/Users/AlexiBesser/Downloads/JORN_LPI_L0_Spring_2025_
 ### LEVEL 1 DATA ###
 
 # read in L0 csv files and create a new column for transect ID
-JORN_L1_data <- read_csv(JORN_L0_data_files, id = "Transect") %>%
+JORN_L1_data <- readr::read_csv(JORN_L0_data_files, id = "Transect") %>%
    mutate(Transect = str_remove_all(Transect, ".csv"))
 
 # write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder
@@ -429,6 +431,9 @@ There is now 1 csv file containing data for all 20 transects. This is considered
 # HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
 #SRER_L1_data <- read.csv("")
 
+JORN_L1_data <- read.csv("/Users/AlexiBesser/Desktop/JORN_LPI_L1_Spring_2025_Data.csv")
+
+JORN_L1_data[]
 ```
 
 ### Clean Level 1 Data
@@ -819,6 +824,8 @@ MOAB_L1_data <- read_csv(MOAB_L0_data_files, id = "Transect") %>%
   mutate(Transect = str_remove_all(Transect, "_1")) %>%
   mutate(Transect = str_remove_all(Transect, "_2"))
 
+write.csv(MOAB_L1_data, "/Users/AlexiBesser/Desktop/MOAB_LPI_L1_Spring_2025_Data.csv")
+
 
 ```
 
@@ -831,6 +838,8 @@ There is now 1 csv file containing data for all 21 transects. This is considered
 # read in L1 transect data
 # HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
 #SRER_L1_data <- read.csv("")
+
+MOAB_L1_data <- read.csv("/Users/AlexiBesser/Desktop/MOAB_LPI_L1_Spring_2025_Data.csv")
 
 ```
 
@@ -1239,6 +1248,8 @@ ONAQ_L1_data <- read_csv(ONAQ_L0_data_files, id = "Transect") %>%
   mutate(Transect = str_remove_all(Transect, "_1")) %>%
   mutate(Transect = str_remove_all(Transect, "_2"))
 
+write.csv(ONAQ_L1_data, "/Users/AlexiBesser/Desktop/ONAQ_LPI_L1_Spring_2025_Data.csv")
+
 ```
 
 There is now 1 csv file containing data for all 21 transects. This is considered level 1 data.
@@ -1250,6 +1261,9 @@ There is now 1 csv file containing data for all 21 transects. This is considered
 # read in L1 transect data
 # HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
 #SRER_L1_data <- read.csv("")
+
+ONAQ_L1_data <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L1_Spring_2025_Data.csv")
+
 
 ```
 

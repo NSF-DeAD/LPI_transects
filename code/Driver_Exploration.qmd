@@ -1,0 +1,1654 @@
+---
+title: "Driver Exploration"
+format: html
+editor: visual
+---
+
+write a README
+
+```{r setup}
+
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(tidyverse)
+library(terra)
+library(raster)
+library(maps)
+library(tidyterra)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(geodata)
+library(grid)
+
+```
+
+```{r import_L2}
+
+prelim_all_data <- read.csv("~/Desktop/Prelim_DeAD_LPI_data.csv")
+
+prelim_all_data <- prelim_all_data %>%
+  mutate(Transect = if_else(Site == "SRER" & Season == "S25",
+                            paste0(Transect, "S25"),
+                            Transect))
+```
+
+```{r lil_cleanup}
+
+all_mic <- prelim_all_data
+
+# Make a new column
+all_mic$Microsite_Plotting <- all_mic$Microsite
+
+# if Top_layer is "L-PGRASS" or "D-PGRASS"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-PGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-PGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# if Top_layer is "L-SHRUB" or "D-SHRUB"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# if Top_layer is "NONE"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "NONE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Bare Ground"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "N") {
+    all_mic$Microsite_Plotting[i] <- "Open: Bare Ground"}
+}
+
+# if Top_layer is "D-FORB" or "D-AGRASS"
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-FORB") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-AGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-FORB") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-AGRASS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# cactus
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-CACT") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-CACT") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "OP") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CY") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+# ACAN
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ACAN") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ACHY
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ACHY") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# AGCR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "AGCR") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# ARTR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ARTR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ATCA
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ATCA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# ATCO
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ATCO") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+# BOER
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BOER") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# BOGR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BOGR") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+# BRTE
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BRTE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# BRTR
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "BRTR") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+# CAER
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CAER") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+# CEPA
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "CEPA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EP") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPIP") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPTO") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "EPVI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ERLE") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ERNA") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "FEWI") {
+    all_mic$Microsite_Plotting[i] <- "Cactus Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "FOSP") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "GUSA") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "HAGL") {
+    all_mic$Microsite_Plotting[i] <- "Open: Annual Grasses and Forbs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "HIJA") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "ISTE") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "JUOS") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "KRLA") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "LATR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PAFL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PRGL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PRVE") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PSSP") {
+    all_mic$Microsite_Plotting[i] <- "Perennial Grass Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PUST") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "PUTR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SAMI") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SATR") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SAVE") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SEGR") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SHRUB") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SOEL") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "SP") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNK") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNK1") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "UNKNOWN") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (!is.na(all_mic$Top_layer_other[i]) && all_mic$Top_layer_other[i] == "YUEL") {
+    all_mic$Microsite_Plotting[i] <- "Shrub Canopy"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "L-SUBS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+for (i in 1:nrow(all_mic)) {
+  if (all_mic$Top_layer[i] == "D-SUBS") {
+    all_mic$Microsite_Plotting[i] <- "Open: Subshrubs"}
+}
+
+all_mic[all_mic$Transect=="SRER001" & all_mic$Remarks == "8", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="SRER025" & all_mic$Remarks == "40", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="MOAB107" & all_mic$Remarks == "48", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="JORN141" & all_mic$Remarks == "25", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="ONAQ049" & all_mic$Remarks == "9", "Microsite_Plotting"] <- "Shrub Canopy"
+
+all_mic[all_mic$Transect=="MOAB006" & all_mic$Remarks == "13", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic[all_mic$Transect=="MOAB010" & all_mic$Remarks == "22", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic[all_mic$Transect=="ONAQ012" & all_mic$Remarks == "7", "Microsite_Plotting"] <- "Open: Subshrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Shrub Canopy"] <- "Canopy: Shrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Perennial Grass Canopy"] <- "Canopy: Perennial Grasses"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Cactus Canopy"] <- "Canopy: Cactus"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "ROCK"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "ROCK_CANOPY"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_ROCK"] <- "Downed Wood or Rocks"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "WOOD"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "WOOD_CANOPY"] <- "Downed Wood or Rocks"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_WOOD"] <- "Downed Wood or Rocks"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "WASH"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "WASH_CANOPY"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_WASH"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "ROCK_WASH"] <- "Wash or Rill"
+
+all_mic$Microsite_Plotting[all_mic$Microsite == "RILL"] <- "Wash or Rill"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "CANOPY_RILL"] <- "Wash or Rill"
+
+# rename
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "HOLE"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "AHILL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "BURROW"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "GAMETRAIL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Microsite_other == "COWPRINT"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "TCAST"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "AHILL"] <- "Animal Structures"
+all_mic$Microsite_Plotting[all_mic$Soil_surface_other == "ANTHILL"] <- "Animal Structures"
+
+all_mic$Litter[all_mic$Litter == "N"] <- "NONE"
+
+all_mic$Litter_depth_center <- as.numeric(all_mic$Litter_depth_center)
+all_mic$Litter_depth_center[is.na(all_mic$Litter_depth_center)] <- 0
+
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Wash or Rill"] <- "Washes or Rills"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Annual Grasses and Forbs"] <- "Annual Grasses and Forbs"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Subshrubs"] <- "Subshrubs"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Open: Bare Ground"] <- "Bare Ground"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Cactus"] <- "Cactus"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Perennial Grasses"] <- "Perennial Grasses"
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Canopy: Shrubs"] <- "Shrubs"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Washes or Rills"] <- "Nonliving Retention Elements"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Animal Structures"] <- "Nonliving Retention Elements"
+
+all_mic$Microsite_Plotting[all_mic$Microsite_Plotting == "Downed Wood or Rocks"] <- "Nonliving Retention Elements"
+
+```
+
+```{r mean_transects}
+
+all_mic_means <- all_mic %>%
+  rowwise() %>%
+  mutate(
+    mean_depth = mean(unlist(across(c(Litter_depth_center,
+                                      Litter_depth_north,
+                                      Litter_depth_east,
+                                      Litter_depth_south,
+                                      Litter_depth_west))), na.rm = TRUE)
+    )
+
+write.csv(all_mic_means, "DeAD_LPI_L2_prelim_data.csv", row.names = FALSE)
+
+Transect_locations <- prelim_all_data %>%
+  group_by(Transect) %>%
+  summarize(mean_lat = mean(Latitude),
+            mean_long = mean(Longitude),
+            mean_elev = mean(Elevation))
+
+site_locations <- prelim_all_data %>%
+  group_by(Site) %>%
+  summarize(mean_lat = mean(Latitude),
+            mean_long = mean(Longitude),
+            mean_elev = mean(Elevation))
+
+```
+
+```{r load_climate_data}
+
+# Read in the ET and AI data from GlobalAI-PET v3
+
+# import ET Geotiff into a spat raster file with terra
+ET_raster_data <- rast("~/Downloads/Global-AI_ET0__annual_v3_1/et0_v31_yr.tif")
+
+# import AI Geotiff into a spat raster file with terra
+AI_raster_data <- rast("~/Downloads/Global-AI_ET0__annual_v3_1/ai_v31_yr.tif")
+
+# AI values in the database are multiplied by 1000 for data distribution speed - these are corrected here
+AI_raster_data1 <- app(AI_raster_data, fun = function(x) x * 0.0001) 
+
+# Read in the relevant annual mean "bioclimatic" data from WorldClim2.1
+# import MAT Geotiff into a spat raster file with terra. MAT is BIO1 bioclimatic variable.
+MAT_raster_data <- rast("~/Downloads/wc2/wc2.1_30s_bio_1.tif")
+
+# import MAP Geotiff into a spat raster file with terra. MAP is BIO12 bioclimatic variable.
+MAP_raster_data <- rast("~/Downloads/wc2/wc2.1_30s_bio_12.tif")
+
+# PRISM - June 2024
+PRISM_raster_June <- rast("~/Downloads/prism_ppt_us_30s_202406/prism_ppt_us_30s_202406.tif")
+
+# PRISM - July 2024
+PRISM_raster_July <- rast("~/Downloads/prism_ppt_us_30s_202407/prism_ppt_us_30s_202407.tif")
+
+# PRISM - August 2024
+PRISM_raster_Aug <- rast("~/Downloads/prism_ppt_us_30s_202408/prism_ppt_us_30s_202408.tif")
+
+# PRISM - September 2024
+PRISM_raster_Sept <- rast("~/Downloads/prism_ppt_us_30s_202409/prism_ppt_us_30s_202409.tif")
+
+
+```
+
+```{r}
+
+# Extract data from GlobalAI-PET v3 for the transect locations
+Lat_Long <- Transect_locations[, c("mean_long", "mean_lat")]
+
+Lat_Long_AI <- Transect_locations |>
+  mutate(PET = extract(ET_raster_data, Lat_Long),
+    AI_mult = extract(AI_raster_data, Lat_Long),
+    AI = extract(AI_raster_data1, Lat_Long),
+    MAT = extract(MAT_raster_data, Lat_Long),
+    MAP = extract(MAP_raster_data, Lat_Long),
+    June = extract(PRISM_raster_June, Lat_Long),
+    July = extract(PRISM_raster_July, Lat_Long),
+    Aug = extract(PRISM_raster_Aug, Lat_Long),
+    Sept = extract(PRISM_raster_Sept, Lat_Long)
+  ) 
+
+# Clean up the dataframe
+Lat_Long_AI <- do.call(data.frame, Lat_Long_AI)
+
+Lat_Long_AI <- Lat_Long_AI |>
+  rename(PET = PET.pet_pm_sr_yr,
+         AI = AI.lyr.1,
+         MAT = MAT.wc2.1_30s_bio_1,
+         MAP = MAP.wc2.1_30s_bio_12,
+         June = June.prism_ppt_us_30s_202406,
+         July = July.prism_ppt_us_30s_202407,
+         Aug = Aug.prism_ppt_us_30s_202408,
+         Sept = Sept.prism_ppt_us_30s_202409) |>
+  dplyr::select(-PET, -PET.ID, -AI_mult.ID, -AI_mult.awi_pm_sr_yr, -AI.ID, -MAT.ID, -MAP.ID)
+
+Lat_Long_AI <- Lat_Long_AI %>%
+  mutate(GrowSeason = June + July + Aug + Sept)
+
+# Add climate class to df
+Lat_Long_AI <- Lat_Long_AI |>
+  mutate(
+    climate_class = case_when(
+      AI < 0.03 ~ "hyperarid",
+      AI >= 0.03 & AI < 0.2 ~ "arid",
+      AI >= 0.2 & AI < 0.5 ~ "semiarid",
+      AI >= 0.5 & AI < 0.65 ~ "drysubhumid",
+      AI > 0.65 ~ "humid",
+      TRUE ~ NA_character_  # Handles other cases or missing values
+    )
+  )
+
+```
+
+```{r}
+
+Lat_Long_AI_trimmed <- Lat_Long_AI %>%
+  select(c("Transect", "AI", "MAT", "MAP"))
+
+Lat_Long_AI_trimmed$Site <- substr(Lat_Long_AI_trimmed$Transect, 1, 4)
+Lat_Long_AI_summary <- Lat_Long_AI_trimmed %>%
+  group_by(Site) %>%
+  summarize(meanAI = mean(AI))
+
+
+all_mic_means_clim <- merge(Lat_Long_AI_trimmed, all_mic_means, by = "Transect")
+
+write.csv(all_mic_means_clim, "DeAD_LPI_L2_prelim_data_with_clim.csv", row.names = FALSE)
+
+```
+
+```{r}
+
+transect_means <- all_mic_means_clim %>%
+  group_by(Transect) %>%
+  dplyr::summarize(meandepth = mean(mean_depth),
+                 n = n(),
+                 elev = mean(Elevation),
+                 Site = first(Site),
+                 AI = first(AI),
+                 MAT = first(MAT),
+                 MAP = first(MAP),
+                 meanheight = mean(Top_height),
+                 .groups = "drop")
+
+transect_means_mic <- all_mic_means_clim %>%
+  group_by(Transect, Microsite_Plotting) %>%
+  dplyr::summarize(n = n(),
+                   mean_mic_height = mean(Top_height)) %>%
+  group_by(Transect) %>%
+  dplyr::mutate(prop_microsite = n / sum(n))
+
+transect_means_merged <- merge(transect_means_mic, transect_means, by = "Transect")
+
+transect_means_shrub <- transect_means_merged %>%
+  filter(Microsite_Plotting == "Shrubs") %>%
+  select(c("Transect", "prop_microsite", "mean_mic_height"))
+
+colnames(transect_means_shrub) <- c("Transect", "Prop_Shrubs", "mean_shrub_height")
+
+transect_means_bare <- transect_means_merged %>%
+  filter(Microsite_Plotting == "Bare Ground") %>%
+  select(c("Transect", "prop_microsite"))
+
+colnames(transect_means_bare) <- c("Transect", "Prop_Bare")
+
+transect_means_shrub_bare <- merge(transect_means_bare, transect_means_shrub, by = "Transect", all = TRUE)
+
+transect_means_mic_merged <- merge(transect_means, transect_means_shrub_bare, by = "Transect")
+
+# ggplot(transect_means_shrub_bare, aes(x = mean_mic_height)) +
+#   geom_histogram() +
+#   scale_x_log10()
+# # need to log transform mean shrub height - I think?
+# 
+# ggplot(transect_means_shrub, aes(x = prop_microsite)) +
+#   geom_histogram() +
+#   scale_x_log10()
+# # need to log transform microsite proportion, too?
+# 
+# ggplot(transect_means_shrub, aes(x = meandepth)) +
+#   geom_histogram() +
+#   scale_x_log10()
+# # also need to log transform mean depths - I think?
+# 
+# transect_means_shrub <- merge(transect_means_bare, transect_means_shrub,
+#                               by = "Transect")
+
+transect_means_shrub_log <- transect_means_mic_merged %>%
+  mutate(logDepth = log10(meandepth),
+         logAI = log10(AI),
+         logShrubHeight = log10(meanheight),
+         logPropShrub = log10(Prop_Shrubs),
+         logPropBare = log10(Prop_Bare)) %>%
+  mutate(logDepth_snv = (logDepth - mean(logDepth))/sd(logDepth),
+         logAI_snv = (logAI - mean(logAI))/sd(logAI),
+         logShrubHeight_snv = (logShrubHeight - mean(logShrubHeight))/sd(logShrubHeight),
+         logPropShrub_snv = (logPropShrub - mean(logPropShrub))/sd(logPropShrub),
+         logPropBare_snv = (logPropBare - mean(logPropBare))/sd(logPropBare))
+
+
+# 
+shrub_lm_height <- lm(logDepth_snv ~ logShrubHeight_snv + logPropShrub_snv + logAI_snv, data = transect_means_shrub_log)
+
+shrub_lm_height
+summary(shrub_lm_height)
+
+
+shrub_bare_lm_height <- lm(logDepth_snv ~ logShrubHeight_snv + logPropShrub_snv + logPropBare_snv + logAI_snv, data = transect_means_shrub_log)
+
+shrub_bare_lm_height
+summary(shrub_bare_lm_height)
+
+```
+
+```{r histograms}
+#| fig-height: 6
+#| fig-width: 4
+
+ggplot(all_mic_means |>
+         mutate(mean_depth = if_else(mean_depth < 0.2, 0.05, mean_depth)),
+       aes(x = mean_depth)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_grid(Microsite_Plotting~Site, scales='free_y')
+
+
+```
+
+```{r}
+
+litter_depth_hist <- ggplot(transect_means, aes(x = meandepth)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+litter_depth_hist
+
+# no log transformation
+elevation_hist <- ggplot(transect_means, aes(x = elev)) +
+  geom_histogram() +
+  facet_wrap(~ Site, scales = "free_y")
+
+elevation_hist
+
+AI_hist <- ggplot(transect_means, aes(x = AI)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+AI_hist
+
+MAP_hist <- ggplot(transect_means, aes(x = MAP)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+MAP_hist
+
+MAT_hist <- ggplot(transect_means, aes(x = MAT)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+MAT_hist
+
+height_hist <- ggplot(transect_means, aes(x = meanheight)) +
+  geom_histogram() +
+  scale_x_log10() +
+  facet_wrap(~ Site, scales = "free_y")
+
+height_hist
+
+
+```
+
+```{r}
+
+transect_means_log <- transect_means_mic_merged %>%
+  mutate(logDepth = log10(meandepth),
+         logAI = log10(AI),
+         logMAT = log10(MAT),
+         logMAP = log10(MAP),
+         logHeight = log10(meanheight),
+         logShrubHeight = log10(mean_shrub_height),
+         logPropShrub = log10(Prop_Shrubs),
+         logPropBare = log10(Prop_Bare)) %>%
+  mutate(logDepth_snv = (logDepth - mean(logDepth))/sd(logDepth),
+         logAI_snv = (logAI - mean(logAI))/sd(logAI),
+         logHeight_snv = (logHeight - mean(logHeight))/sd(logHeight),
+         logShrubHeight_snv = (logShrubHeight - mean(logShrubHeight))/sd(logShrubHeight),
+         logPropShrub_snv = (logPropShrub - mean(logPropShrub))/sd(logPropShrub),
+         logPropBare_snv = (logPropBare - mean(logPropBare))/sd(logHeight))
+
+library("lme4")
+
+# with site as random effect
+mixed_model <- lmer(logDepth_snv ~ logAI_snv + logHeight_snv + (1 | Site), data = transect_means_log)
+
+mixed_model
+summary(mixed_model)
+
+# no random effects
+mixed_model_lm <- lm(logDepth_snv ~ logAI_snv + logHeight_snv, data = transect_means_log)
+
+mixed_model_lm
+summary(mixed_model_lm)
+
+# no random effects
+mixed_model_bare_lm <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logPropBare_snv, data = transect_means_log)
+
+mixed_model_bare_lm
+summary(mixed_model_bare_lm)
+
+# only height
+mixed_model_lm_height <- lm(logDepth_snv ~ logHeight_snv, data = transect_means_log)
+
+mixed_model_lm_height
+summary(mixed_model_lm_height)
+```
+
+```{r}
+
+# initial model
+# response = litter depth
+# fixed effects = AI, mean height - all, mean height - all, proportion shrubs, proportion bare
+# random effect = site
+initial_model <- lmer(logDepth_snv ~ logAI_snv + logHeight_snv + logShrubHeight_snv + logPropShrub_snv + logPropBare_snv + (1 | Site), data = transect_means_log)
+
+initial_model
+summary(initial_model)
+
+drop1(initial_model, test = "Chisq")
+
+# initial model
+# response = litter depth
+# fixed effects = AI, mean height - all, mean height - all, proportion shrubs, proportion bare
+# random effect = site
+initial_model <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logShrubHeight_snv + logPropShrub_snv + logPropBare_snv, data = transect_means_log)
+
+initial_model
+summary(initial_model)
+
+# stepAIC
+final_model <- MASS::stepAIC(initial_model, direction = "both")
+
+final_model
+
+summary(final_model)
+
+options(na.action = "na.fail")
+all_models <- MuMIn::dredge(initial_model, rank = "AIC", trace = FALSE)
+all_models
+summary(all_models)
+
+write.csv(as.data.frame(all_models), "Driver_all_models.csv", row.names = FALSE)
+
+
+final_model <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logShrubHeight_snv + logPropBare_snv, data = transect_means_log)
+
+final_model
+summary(final_model)
+
+
+final_model <- lm(logDepth_snv ~ logAI_snv + logHeight_snv, data = transect_means_log)
+
+final_model
+summary(final_model)
+
+```
+
+```{r}
+
+library(sf)
+library(neonUtilities)
+library(neonOS)
+library(terra)
+library(dplyr)
+
+SRER_coords <- all_mic_means_clim %>%
+  filter(str_starts(Transect, "SRER"))
+
+SRER_lat_long <- Transect_locations %>%
+  filter(str_starts(Transect, "SRER"))
+
+JORN_coords <- all_mic_means_clim %>%
+  filter(str_starts(Transect, "JORN"))
+
+JORN_lat_long <- Transect_locations %>%
+  filter(str_starts(Transect, "JORN"))
+
+MOAB_coords <- all_mic_means_clim %>%
+  filter(str_starts(Transect, "MOAB"))
+
+MOAB_lat_long <- Transect_locations %>%
+  filter(str_starts(Transect, "MOAB"))
+
+ONAQ_lat_long <- Transect_locations %>%
+  filter(str_starts(Transect, "ONAQ"))
+
+ONAQ_coords <- all_mic_means_clim %>%
+  filter(str_starts(Transect, "ONAQ"))
+
+SRER_pts <- st_as_sf(SRER_coords, coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE)
+
+JORN_pts <- st_as_sf(JORN_coords, coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE)
+
+MOAB_pts <- st_as_sf(MOAB_coords, coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE)
+
+ONAQ_pts <- st_as_sf(ONAQ_coords, coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE)
+
+# 2) Transform to the correct UTM CRS for the NEON site
+# Example only: replace with the correct UTM zone for your site
+SRER_pts_utm <- st_transform(SRER_pts, 32612)
+
+JORN_pts_utm <- st_transform(JORN_pts, 32613)
+
+MOAB_pts_utm <- st_transform(MOAB_pts, 32612)
+
+ONAQ_pts_utm <- st_transform(ONAQ_pts, 32612)
+
+
+SRER_xy <- st_coordinates(SRER_pts_utm)
+
+JORN_xy <- st_coordinates(JORN_pts_utm)
+
+MOAB_xy <- st_coordinates(MOAB_pts_utm)
+
+ONAQ_xy <- st_coordinates(ONAQ_pts_utm)
+
+
+# 3) Download the tiles that intersect all points
+# Use the LAI mosaic product code you confirm on NEON
+SRER_2022_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "SRER",
+  year = "2022",
+  easting = SRER_xy[, 1],
+  northing = SRER_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+SRER_2024_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "SRER",
+  year = "2024",
+  easting = SRER_xy[, 1],
+  northing = SRER_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+SRER_2025_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "SRER",
+  year = "2025",
+  easting = SRER_xy[, 1],
+  northing = SRER_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+JORN_2022_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "JORN",
+  year = "2022",
+  easting = JORN_xy[, 1],
+  northing = JORN_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+JORN_2025_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "JORN",
+  year = "2025",
+  easting = JORN_xy[, 1],
+  northing = JORN_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+MOAB_2022_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "MOAB",
+  year = "2022",
+  easting = MOAB_xy[, 1],
+  northing = MOAB_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+MOAB_2023_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "MOAB",
+  year = "2023",
+  easting = MOAB_xy[, 1],
+  northing = MOAB_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+ONAQ_2022_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "ONAQ",
+  year = "2022",
+  easting = ONAQ_xy[, 1],
+  northing = ONAQ_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+ONAQ_2023_tiles <- byTileAOP(
+  dpID = "DP3.30012.002",
+  site = "ONAQ",
+  year = "2023",
+  easting = ONAQ_xy[, 1],
+  northing = ONAQ_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+LAI_files <- list.files(path = "~/Desktop/Github/LPI_transects", pattern = "\\.tif(f)?$", recursive = TRUE, full.names = TRUE)
+
+SRER_LAI_files <- LAI_files[grepl("SRER", LAI_files)]
+SRER_rast <- rast(SRER_LAI_files[1])
+SRER_rast
+SRER_LAI_values <- hist(SRER_rast)
+plot(SRER_rast)
+
+JORN_LAI_files <- LAI_files[grepl("JORN", LAI_files)]
+JORN_rast <- rast(JORN_LAI_files[1])
+JORN_rast
+JORN_LAI_values <- hist(JORN_rast)
+plot(JORN_rast)
+
+MOAB_LAI_files <- LAI_files[grepl("MOAB", LAI_files)]
+MOAB_rast <- rast(MOAB_LAI_files[1])
+MOAB_rast
+MOAB_LAI_values <- hist(MOAB_rast)
+plot(MOAB_rast)
+
+ONAQ_LAI_files <- LAI_files[grepl("ONAQ", LAI_files)]
+ONAQ_rast <- rast(ONAQ_LAI_files[1])
+ONAQ_rast
+ONAQ_LAI_values <- hist(ONAQ_rast)
+plot(ONAQ_rast)
+
+```
+
+```{r}
+
+library(dplyr)
+library(purrr)
+library(terra)
+
+# point order + geometry
+SRER_pts_utm <- SRER_pts_utm %>%
+  mutate(point_id = row_number())
+
+SRER_vect <- vect(SRER_pts_utm)
+
+JORN_pts_utm <- JORN_pts_utm %>%
+  mutate(point_id = row_number())
+
+JORN_vect <- vect(JORN_pts_utm)
+
+MOAB_pts_utm <- MOAB_pts_utm %>%
+  mutate(point_id = row_number())
+
+MOAB_vect <- vect(MOAB_pts_utm)
+
+ONAQ_pts_utm <- ONAQ_pts_utm %>%
+  mutate(point_id = row_number())
+
+ONAQ_vect <- vect(ONAQ_pts_utm)
+
+
+extract_year_fast <- function(year, files, pts_vect) {
+  year_files <- files[grepl(as.character(year), files) & !grepl("_error", files)]
+
+  vals <- map_dfr(year_files, function(f) {
+    r <- rast(f)
+    ex <- terra::extract(r, pts_vect)
+
+    tibble(
+      point_id = ex$ID,
+      lai = ex[[2]]
+    )
+  })
+
+  vals %>%
+    group_by(point_id) %>%
+    summarise(lai = first(na.omit(lai)), .groups = "drop") %>%
+    arrange(point_id) %>%
+    pull(lai)
+}
+
+SRER_LAI_pts <- SRER_coords %>%
+  mutate(
+    LAI_2022 = extract_year_fast(2022, SRER_LAI_files, SRER_vect),
+    LAI_2024 = extract_year_fast(2024, SRER_LAI_files, SRER_vect),
+    LAI_2025 = extract_year_fast(2025, SRER_LAI_files, SRER_vect)
+  )
+
+JORN_LAI_pts <- JORN_coords %>%
+  mutate(
+    LAI_2022 = extract_year_fast(2022, JORN_LAI_files, JORN_vect),
+    LAI_2025 = extract_year_fast(2025, JORN_LAI_files, JORN_vect)
+  )
+
+MOAB_LAI_pts <- MOAB_coords %>%
+  mutate(
+    LAI_2022 = extract_year_fast(2022, MOAB_LAI_files, MOAB_vect),
+    LAI_2023 = extract_year_fast(2023, MOAB_LAI_files, MOAB_vect)
+  )
+
+ONAQ_LAI_pts <- ONAQ_coords %>%
+  mutate(
+    LAI_2022 = extract_year_fast(2022, ONAQ_LAI_files, ONAQ_vect),
+    LAI_2023 = extract_year_fast(2023, ONAQ_LAI_files, ONAQ_vect)
+  )
+
+LAI_pts <- bind_rows(SRER_LAI_pts, JORN_LAI_pts, MOAB_LAI_pts, ONAQ_LAI_pts)
+
+LAI_pts <- LAI_pts %>%
+  mutate(
+    mean_LAI = rowMeans(
+      select(., LAI_2022, LAI_2023, LAI_2024, LAI_2025),
+      na.rm = TRUE
+    )
+  )
+
+```
+
+```{r}
+
+LAI_hist <- ggplot(LAI_pts, aes(x = mean_LAI)) +
+  geom_histogram() +
+  scale_x_log10()
+
+LAI_hist
+
+LAI_NA <- LAI_pts[is.na(LAI_pts$mean_LAI), ] # ignoring for now...
+
+LAI_means <- LAI_pts %>%
+  group_by(Transect) %>%
+  dplyr::summarize(mean_LAI = mean(mean_LAI, na.rm = TRUE),
+                 .groups = "drop")
+
+transects_means_mic_LAI <- merge(transect_means_mic_merged, LAI_means, by = "Transect")
+
+transects_means_mic_LAI$Prop_Shrubs[is.na(transects_means_mic_LAI$Prop_Shrubs)] <- .01
+
+transect_means_log <- transects_means_mic_LAI %>%
+  mutate(logDepth = log10(meandepth),
+         logAI = log10(AI),
+         logMAT = log10(MAT),
+         logMAP = log10(MAP),
+         logHeight = log10(meanheight),
+         logPropShrub = log10(Prop_Shrubs),
+         logPropBare = log10(Prop_Bare),
+         logLAI = log10(mean_LAI)) %>%
+  mutate(logDepth_snv = (logDepth - mean(logDepth))/sd(logDepth),
+         logAI_snv = (logAI - mean(logAI))/sd(logAI),
+         logHeight_snv = (logHeight - mean(logHeight))/sd(logHeight),
+         logPropShrub_snv = (logPropShrub - mean(logPropShrub))/sd(logPropShrub),
+         logPropBare_snv = (logPropBare - mean(logPropBare))/sd(logHeight),
+         logLAI_snv = (logLAI - mean(logLAI))/sd(logLAI))
+
+initial_model <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logLAI_snv + logPropShrub_snv + logPropBare_snv, data = transect_means_log)
+
+initial_model
+summary(initial_model)
+
+# # stepAIC
+# final_model <- MASS::stepAIC(initial_model, direction = "both")
+# 
+# final_model
+# 
+# summary(final_model)
+
+options(na.action = "na.fail")
+all_models <- MuMIn::dredge(initial_model, rank = "AIC", trace = FALSE)
+all_models
+summary(all_models)
+
+write.csv(as.data.frame(all_models), "Driver_all_models_13Apr2026.csv", row.names = FALSE)
+
+final_model <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logPropBare_snv + logPropShrub_snv, data = transect_means_log)
+
+final_model
+summary(final_model)
+
+final_model <- lm(logDepth_snv ~ logAI_snv + logHeight_snv, data = transect_means_log)
+
+final_model
+summary(final_model)
+
+```
+
+```{r}
+
+LAI_plot <- ggplot(transect_means_log, aes(x = mean_LAI, y = meandepth)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "olivedrab",
+              fill = "olivedrab") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "olivedrab") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Leaf Area Index",
+     y = "Mean Nonwoody Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+LAI_plot
+
+```
+
+```{r}
+
+# 3) Download the tiles that intersect all points
+# Use the LAI mosaic product code you confirm on NEON
+SRER_2022_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "SRER",
+  year = "2022",
+  easting = SRER_xy[, 1],
+  northing = SRER_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+SRER_2024_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "SRER",
+  year = "2024",
+  easting = SRER_xy[, 1],
+  northing = SRER_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+SRER_2025_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "SRER",
+  year = "2025",
+  easting = SRER_xy[, 1],
+  northing = SRER_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+JORN_2022_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "JORN",
+  year = "2022",
+  easting = JORN_xy[, 1],
+  northing = JORN_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+JORN_2025_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "JORN",
+  year = "2025",
+  easting = JORN_xy[, 1],
+  northing = JORN_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+MOAB_2022_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "MOAB",
+  year = "2022",
+  easting = MOAB_xy[, 1],
+  northing = MOAB_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+MOAB_2023_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "MOAB",
+  year = "2023",
+  easting = MOAB_xy[, 1],
+  northing = MOAB_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+ONAQ_2022_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "ONAQ",
+  year = "2022",
+  easting = ONAQ_xy[, 1],
+  northing = ONAQ_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+ONAQ_2023_vegind <- byTileAOP(
+  dpID = "DP3.30026.002",
+  site = "ONAQ",
+  year = "2023",
+  easting = ONAQ_xy[, 1],
+  northing = ONAQ_xy[, 2],
+  check.size = TRUE,
+  include.provisional = TRUE
+)
+
+VegIndices_files <- list.files(path = "~/Desktop/Github/LPI_transects", pattern = "\\.zip?$", recursive = TRUE, full.names = TRUE)
+
+library(stringr)
+library(purrr)
+
+dir.create("unzipped_veg_indices", showWarnings = FALSE)
+
+zip_files <- list.files(
+  path = "~/Desktop/Github/LPI_transects",
+  pattern = "\\.zip$",
+  recursive = TRUE,
+  full.names = TRUE
+)
+
+zip_year <- str_extract(zip_files, "(?<=/)(20\\d{2})(?=/)")
+
+walk2(zip_files, zip_year, function(z, y) {
+  outdir <- file.path("unzipped_veg_indices", y)
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+  unzip(z, exdir = outdir)
+})
+
+vegind_files_2022 <- list.files(
+  "unzipped_veg_indices/2022",
+  pattern = "\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE
+)
+
+vegind_files_2023 <- list.files(
+  "unzipped_veg_indices/2023",
+  pattern = "\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE
+)
+
+vegind_files_2024 <- list.files(
+  "unzipped_veg_indices/2024",
+  pattern = "\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE
+)
+
+vegind_files_2025 <- list.files(
+  "unzipped_veg_indices/2025",
+  pattern = "\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE
+)
+
+SRER_vegind_files_2022 <- vegind_files_2022[grepl("SRER", vegind_files_2022)]
+SRER_vegind_files_2024 <- vegind_files_2024[grepl("SRER", vegind_files_2024)]
+SRER_vegind_files_2025 <- vegind_files_2025[grepl("SRER", vegind_files_2025)]
+
+JORN_vegind_files_2022 <- vegind_files_2022[grepl("JORN", vegind_files_2022)]
+JORN_vegind_files_2025 <- vegind_files_2025[grepl("JORN", vegind_files_2025)]
+
+MOAB_vegind_files_2022 <- vegind_files_2022[grepl("MOAB", vegind_files_2022)]
+MOAB_vegind_files_2023 <- vegind_files_2023[grepl("MOAB", vegind_files_2023)]
+
+ONAQ_vegind_files_2022 <- vegind_files_2022[grepl("ONAQ", vegind_files_2022)]
+ONAQ_vegind_files_2023 <- vegind_files_2023[grepl("ONAQ", vegind_files_2023)]
+
+```
+
+```{r}
+
+extract_veg_one_year <- function(files, pts_vect, year) {
+  files <- files[!grepl("_error", files)]
+
+  if (length(files) == 0) {
+    return(tibble(
+      point_id = integer(),
+      year = integer(),
+      index = character(),
+      value = numeric()
+    ))
+  }
+
+  map_dfr(files, function(f) {
+    r <- rast(f)
+    ex <- terra::extract(r, pts_vect)
+
+    tibble(
+      point_id = ex$ID,
+      year = year,
+      index = str_extract(basename(f), "ARVI|EVI|NDVI|PRI|SAVI"),
+      value = ex[[2]]
+    )
+  }) %>%
+    group_by(point_id, year, index) %>%
+    summarise(value = first(na.omit(value)), .groups = "drop")
+}
+
+SRER_veg_long <- bind_rows(
+  extract_veg_one_year(SRER_vegind_files_2022, SRER_vect, 2022),
+  extract_veg_one_year(SRER_vegind_files_2024, SRER_vect, 2024),
+  extract_veg_one_year(SRER_vegind_files_2025, SRER_vect, 2025)
+)
+
+SRER_veg_wide <- SRER_veg_long %>%
+  mutate(col = paste0("Veg_", year, "_", index)) %>%
+  select(point_id, col, value) %>%
+  pivot_wider(names_from = col, values_from = value)
+
+SRER_veg_indices <- merge(SRER_pts_utm, SRER_veg_wide, by = "point_id")
+
+JORN_veg_long <- bind_rows(
+  extract_veg_one_year(JORN_vegind_files_2022, JORN_vect, 2022),
+  extract_veg_one_year(JORN_vegind_files_2025, JORN_vect, 2025)
+)
+
+JORN_veg_wide <- JORN_veg_long %>%
+  mutate(col = paste0("Veg_", year, "_", index)) %>%
+  select(point_id, col, value) %>%
+  pivot_wider(names_from = col, values_from = value)
+
+JORN_veg_indices <- merge(JORN_pts_utm, JORN_veg_wide, by = "point_id")
+
+MOAB_veg_long <- bind_rows(
+  extract_veg_one_year(MOAB_vegind_files_2022, MOAB_vect, 2022),
+  extract_veg_one_year(MOAB_vegind_files_2023, MOAB_vect, 2023)
+)
+
+MOAB_veg_wide <- MOAB_veg_long %>%
+  mutate(col = paste0("Veg_", year, "_", index)) %>%
+  select(point_id, col, value) %>%
+  pivot_wider(names_from = col, values_from = value)
+
+MOAB_veg_indices <- merge(MOAB_pts_utm, MOAB_veg_wide, by = "point_id")
+
+
+ONAQ_veg_long <- bind_rows(
+  extract_veg_one_year(ONAQ_vegind_files_2022, ONAQ_vect, 2022),
+  extract_veg_one_year(ONAQ_vegind_files_2023, ONAQ_vect, 2023)
+)
+ 
+ONAQ_veg_wide <- ONAQ_veg_long %>%
+  mutate(col = paste0("Veg_", year, "_", index)) %>%
+  select(point_id, col, value) %>%
+  pivot_wider(names_from = col, values_from = value)
+
+ONAQ_veg_indices <- merge(ONAQ_pts_utm, ONAQ_veg_wide, by = "point_id")
+
+SRER_veg_indices <- as.data.frame(SRER_veg_indices)
+SRER_veg_indices <- SRER_veg_indices %>%
+  select(!c("point_id", "geometry"))
+
+JORN_veg_indices <- as.data.frame(JORN_veg_indices)
+JORN_veg_indices <- JORN_veg_indices %>%
+  select(!c("point_id", "geometry"))
+
+MOAB_veg_indices <- as.data.frame(MOAB_veg_indices)
+MOAB_veg_indices <- MOAB_veg_indices %>%
+  select(!c("point_id", "geometry"))
+
+ONAQ_veg_indices <- as.data.frame(ONAQ_veg_indices)
+ONAQ_veg_indices <- ONAQ_veg_indices %>%
+  select(!c("point_id", "geometry"))
+
+veg_indices_pts <- bind_rows(SRER_veg_indices, JORN_veg_indices, MOAB_veg_indices, ONAQ_veg_indices)
+
+veg_indices_pts <- veg_indices_pts %>%
+  mutate(
+    mean_ARVI = rowMeans(
+      select(., Veg_2022_ARVI, Veg_2023_ARVI, Veg_2024_ARVI, Veg_2025_ARVI),
+      na.rm = TRUE),
+    mean_EVI = rowMeans(
+      select(., Veg_2022_EVI, Veg_2023_EVI, Veg_2024_EVI, Veg_2025_EVI),
+      na.rm = TRUE),
+    mean_NDVI = rowMeans(
+      select(., Veg_2022_NDVI, Veg_2023_NDVI, Veg_2024_NDVI, Veg_2025_NDVI),
+      na.rm = TRUE),
+    mean_PRI = rowMeans(
+      select(., Veg_2022_PRI, Veg_2023_PRI, Veg_2024_PRI, Veg_2025_PRI),
+      na.rm = TRUE),
+    mean_SAVI = rowMeans(
+      select(., Veg_2022_SAVI, Veg_2023_SAVI, Veg_2024_SAVI, Veg_2025_SAVI),
+      na.rm = TRUE)
+  )
+
+```
+
+```{r}
+
+veg_indices_means <- veg_indices_pts %>%
+  group_by(Transect) %>%
+  dplyr::summarize(mean_ARVI = mean(mean_ARVI, na.rm = TRUE),
+                   mean_EVI = mean(mean_EVI, na.rm = TRUE),
+                   mean_NDVI = mean(mean_NDVI, na.rm = TRUE),
+                   mean_PRI = mean(mean_PRI, na.rm = TRUE),
+                   mean_SAVI = mean(mean_SAVI, na.rm = TRUE),
+                 .groups = "drop")
+
+transects_means_mic_LAI_veg <- merge(transects_means_mic_LAI, veg_indices_means,
+                                     by = "Transect")
+
+transects_means_mic_LAI_veg$Prop_Shrubs[is.na(transects_means_mic_LAI_veg$Prop_Shrubs)] <- .01
+
+transect_means_log <- transects_means_mic_LAI_veg %>%
+  mutate(logDepth = log10(meandepth),
+         logAI = log10(AI),
+         logMAT = log10(MAT),
+         logMAP = log10(MAP),
+         logElev = log10(elev),
+         logHeight = log10(meanheight),
+         logPropShrub = log10(Prop_Shrubs),
+         logPropBare = log10(Prop_Bare),
+         logLAI = log10(mean_LAI),
+         logARVI = log10(abs(mean_ARVI)),
+         logEVI = log10(mean_EVI),
+         logNDVI = log10(mean_NDVI),
+         logPRI = log10(abs(mean_PRI)),
+         logSAVI = log10(mean_SAVI)) %>%
+  mutate(logDepth_snv = (logDepth - mean(logDepth))/sd(logDepth),
+         logAI_snv = (logAI - mean(logAI))/sd(logAI),
+         logMAT_snv = (logMAT - mean(logMAT))/sd(logMAT),
+         logMAP_snv = (logMAP - mean(logMAP))/sd(logMAP),
+         logElev_snv = (logElev - mean(logElev))/sd(logElev),
+         logHeight_snv = (logHeight - mean(logHeight))/sd(logHeight),
+         logPropShrub_snv = (logPropShrub - mean(logPropShrub))/sd(logPropShrub),
+         logPropBare_snv = (logPropBare - mean(logPropBare))/sd(logHeight),
+         logLAI_snv = (logLAI - mean(logLAI))/sd(logLAI),
+         logARVI_snv = (logARVI - mean(logARVI))/sd(logARVI),
+         logEVI_snv = (logEVI - mean(logEVI))/sd(logEVI),
+         logNDVI_snv = (logNDVI - mean(logNDVI))/sd(logNDVI),
+         logPRI_snv = (logPRI - mean(logPRI))/sd(logPRI),
+         logSAVI_snv = (logSAVI - mean(logSAVI))/sd(logSAVI))
+
+initial_model <- lm(logDepth_snv ~ logAI_snv + logMAT_snv + logMAP_snv + logElev_snv + logHeight_snv + logLAI_snv + logPropShrub_snv + logPropBare_snv + logARVI_snv + logEVI_snv + logNDVI_snv + logPRI_snv + logSAVI_snv, data = transect_means_log)
+
+initial_model
+summary(initial_model)
+
+
+options(na.action = "na.fail")
+all_models <- MuMIn::dredge(initial_model, rank = "AIC", trace = FALSE)
+all_models
+summary(all_models)
+
+write.csv(as.data.frame(all_models), "Driver_all_models_14Apr2026.csv", row.names = FALSE)
+
+
+final_model <- lm(logDepth_snv ~ logAI_snv + logMAP_snv + logHeight_snv + logARVI_snv + logNDVI_snv, data = transect_means_log)
+
+final_model
+summary(final_model)
+
+
+# final_model_raw <- lm(meandepth ~ AI + meanheight + mean_ARVI + mean_NDVI, data = transect_means_log)
+# 
+# final_model_raw
+# summary(final_model_raw)
+data_for_corr <- transect_means_log %>%
+  dplyr::select(c("logAI_snv", "logMAT_snv", "logMAP_snv", "logElev_snv",
+                  "logHeight_snv", "logPropShrub_snv", "logPropBare_snv", 
+                  "logLAI_snv", "logARVI_snv", "logEVI_snv", "logNDVI_snv",
+                  "logPRI_snv", "logSAVI_snv" ))
+
+corr_matrix = round(cor(data_for_corr), 2)
+
+ggcorrplot::ggcorrplot(corr_matrix, hc.order = TRUE, type = "lower",
+          lab = TRUE)
+
+final_model_trim <- lm(logDepth_snv ~ logAI_snv + logHeight_snv + logNDVI_snv, data = transect_means_log)
+
+final_model_trim
+summary(final_model_trim)
+
+final_model_trim_raw <- lm(meandepth ~ AI + meanheight + mean_NDVI, data = transect_means_log)
+
+final_model_trim_raw
+summary(final_model_trim_raw)
+
+initial_model_raw <- lm(meandepth ~ AI + MAT + MAP + elev + meanheight + mean_LAI + Prop_Shrubs + Prop_Bare + mean_ARVI + mean_EVI + mean_NDVI + mean_PRI + mean_SAVI, data = transect_means_log)
+
+initial_model_raw
+summary(initial_model_raw)
+
+
+options(na.action = "na.fail")
+all_models_raw <- MuMIn::dredge(initial_model_raw, rank = "AIC", trace = FALSE)
+all_models_raw
+summary(all_models_raw)
+
+write.csv(as.data.frame(all_models_raw), "Driver_all_models_14Apr2026_raw.csv", row.names = FALSE)
+
+
+```
+
+```{r}
+
+AI_depth <- ggplot(transect_means_log, aes(x = logAI_snv, y = logDepth_snv)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "darkred",
+              fill = "darkred") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "darkred") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Aridity Index",
+     y = expression("Mean Nonwoody Litter Depth (mm)")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+AI_depth
+
+Height_depth <- ggplot(transect_means_log, aes(x = meanheight, y = meandepth)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "olivedrab",
+              fill = "olivedrab") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "olivedrab") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Canopy Height (cm)",
+     y = expression("Mean Nonwoody Litter Depth (mm)")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_blank(),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+Height_depth
+
+NDVI_plot <- ggplot(transect_means_log, aes(x = mean_NDVI, y = meandepth)) +
+  stat_smooth(method = "lm", formula = y ~ x, fullrange = FALSE, color = "chocolate1",
+              fill = "chocolate1") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "chocolate1") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Normalized Difference Vegetation Index",
+     y = "Mean Nonwoody Litter Depth (mm)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_blank(),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75))
+
+NDVI_plot
+
+drivers_plot <- ggpubr::ggarrange(Height_depth, AI_depth, NDVI_plot, nrow = 3, align = "hv")
+drivers_plot
+
+ggsave("Litter_Drivers_Plot.pdf", plot = last_plot(), height = 12, width = 8)
+```

@@ -1,0 +1,3 @@
+# set up your own path to the DERT Dropbox folder here
+default:
+  path: "/Users/AlexiBesser/Library/CloudStorage/Dropbox-ASU/Alexi Besser/ASU NSF Dryland Decomposition/Field&LabCircle/Field_Data"

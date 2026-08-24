@@ -12,11 +12,13 @@ output - contains all output files generated in the .qmd files organized into su
   data_files - contains derived data files and sample logs
   figures - contains figures 
   result_files - contains result files from statistical tests
+  sample_logs - contains files of quadrat samples (pre- and post-sorting)
   
 This repository involves the following data levels:
 L0 - individual csv files for each transect; not stored here; pulled in directly from the Dropbox folder owned and maintained by Heather Throop
 L1 - compiled csv file containing data for all transects; generated once here, then subsequently pulled in directly from the Dropbox folder owned and maintained by Heather Throop
 L2 - compiled and cleaned csv file containing data for all transects (with replicate data points and data points containing irreconcilable typos or other mistakes removed), transect locations csv file, quadrat sample log csv file; stored in output > data_files > L2
-L3 - summary and other derived data csv files; stored in output > data_files > L3
+L3 - compiled and cleand csv file containing additional data
+L4 - summary and other derived data csv files; stored in output > data_files > L3
 
 For further information regarding this repository, please contact: Alexi Besser (acbesser@asu.edu)

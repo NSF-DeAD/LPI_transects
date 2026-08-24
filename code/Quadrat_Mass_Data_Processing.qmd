@@ -1,0 +1,447 @@
+---
+title: "Litter Quadrats: Masses by Litter Category"
+format: html
+editor: visual
+---
+
+## README
+
+```{r read_cleanup_data}
+
+# read in csv file containing mass data for each quadrat and litter category
+quad_mass <- read.csv("~/Downloads/Litter_Quadrat_Sorting_and_Weighing-18.csv")
+
+# remove empty rows
+quad_mass <- quad_mass[!is.na(quad_mass$Bag_ID), ]
+
+# look at unique values for Litter_type to check for typos
+unique(quad_mass$Litter_type)
+
+# create a new data frame and remove litter categories we are not interested in
+quad_mass_clean <- quad_mass %>%
+  filter(!Litter_type %in% c("Biocrust", "Cactus", "Dung", "Egg?", "Invertebrates",  
+                             "Moss", "Moss_Biocrust", "Vertebrate", "Wood", "OtherPlant"))
+
+# double-check that only desired nonwoody litter categories remain
+unique(quad_mass_clean$Litter_type)
+
+# create a new column for the final litter mass that will be used for analyses
+quad_mass_clean$Litter_mass_final_g <- quad_mass_clean$Litter_mass_g
+
+# create and run a for loop to replace negative litter masses with re-weighed litter masses
+for (i in 1:nrow(quad_mass_clean)) {
+  if (quad_mass_clean$Litter_mass_g[i] < 0) {
+    quad_mass_clean$Litter_mass_final_g[i] <- quad_mass_clean$Reweighed_Litter_mass_g[i]}
+}
+
+### QA/QC ###
+# we need to remove the following points
+
+# most of the LPI data/metadata for Bag_ID 1012 is missing
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1012"), ]
+
+# most of the LPI data/metadata for Bag_ID 1058 is missing
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1058"), ]
+
+# most of the LPI data/metadata for Bag_ID 1060 is missing
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1060"), ]
+
+# most of the LPI data/metadata for Bag_ID 1086 is missing
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1086"), ]
+
+# most of the LPI data/metadata for Bag_ID 1099 is missing
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1099"), ]
+
+# there is no LPI data/metadata for Bag_ID 1016 (from the quadrat photographs, I know this is from the SRER030 20 m point, something must have happened with the iPad, maybe it got disconnected from the SparkFun...)
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1016"), ]
+
+# there is no LPI data/metadata for Bag_ID 1101 (from the quadrat photographs, I know this is from the JORN123 5 m point, something must have happened with the iPad, maybe it got disconnected from the SparkFun...)
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1101"), ]
+
+# there is no LPI data/metadata for Bag_ID 1118 (from the quadrat photographs, I know this is from the ONAQ239 20 m point, something must have happened with the iPad, maybe it got disconnected from the SparkFun...)
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1118"), ]
+
+# we have two Bag_ID values of 1121 (and the corresponding quadrat photos also say 1121, so we can't tell them apart...)
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1121"), ]
+
+# there is no LPI data/metadata for Bag_ID 2000 (from the quadrat photographs, I know this is from the MOAB131 50 m point, something must have happened with the iPad, maybe it got disconnected from the SparkFun...)
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2000"), ]
+
+# we have two Bag_ID values of 1023 (this does not make sense and I cannot figure it out, so we need to toss this point)
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1023"), ]
+
+# Bag_ID 1104 should not have been empty
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1104"), ]
+
+# the high mass of litter recorded for Bag_ID 2059 does not make sense for the quadrat photograph we have, we need to toss the point because a lot of buried litter was likely collected
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2059"), ]
+
+# the depth measurements recorded for Bag_ID 1043 make no sense with the corresponding quadrat photograph, so we need to toss this point
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1043"), ]
+
+# the depth measurements for Bag_ID 1106 are way too high for the corresponding quadrat photograph, so we need to toss this point
+#quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1106"), ]
+
+# the depth measurements for Bag_ID 1035 included cactus litter, so we will toss this point
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "1035"), ]
+
+# the quadrat photograph for Bag_ID indicates the presence of a lot of woody litter, this likely inflated the depth measurements and made this point an extreme outlier, we will toss it
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2023"), ]
+
+# was a standing dead sampled here? litter depth measurements look low for corresponding quadrat photograph
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2112"), ]
+
+# this makes no sense with the photograph
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2113"), ]
+
+# the amount of ambiguous litter does not make sense with the quadrat photograph
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2064" & quad_mass_clean$Litter_type == "Leaves_Ambiguous"), ]
+
+# why do we have multiple lines for 2032 in the weighing sheet?!
+quad_mass_clean <- quad_mass_clean[!(quad_mass_clean$Bag_ID == "2032"), ]
+
+
+# calculate the total nonwoody mass per area
+QuadMassStats <- quad_mass_clean %>%
+  group_by(Bag_ID) %>%
+  dplyr::summarize(total_mass_g = sum(Litter_mass_final_g),
+                   mass_area_g_m2 = total_mass_g*100)
+
+# create a list of unique bag IDs
+BagIDs <- unique(QuadMassStats$Bag_ID)
+
+# rename columns in the QuadMassStats data frame
+colnames(QuadMassStats) <- c("BagID", "total_mass_g", "mass_area_g_m2")
+
+### MOVE THIS TO THE CORRESPONDING DATA CLEANING QMD FILE ###
+L1_data <- quad_data
+# we have two Bag_ID values of 1139, but one of these should be 1141 (the Bag_ID wasn't rewritten properly on the whiteboard in the field, but we caught this error while looking at the quadrat photographs and are confident the Bag_ID for the ONAQ231 40 m mark should be 1141)
+L1_data[L1_data$Transect == "ONAQ231" & L1_data$Remarks == "40", "BagID"] <- "1141"
+
+# we have two Bag_ID values of 1121, but one of these should be 1171 (the Bag_ID wasn't rewritten properly on the whiteboard in the field, but we caught this error while looking at the quadrat photographs and are confident the Bag_ID for the ONAQ250 5 m mark should be 1171)
+L1_data[L1_data$Transect == "ONAQ250" & L1_data$Remarks == "5", "BagID"] <- "1171"
+
+# 1 of these rows has a quadrat photo and there looks to be a pretty even distribution of litter - let's take the average of the other 4 litter depth measurements
+L1_data[L1_data$Transect == "SRER039" & L1_data$Remarks == "30", "Litter_depth_west"] <- 4
+
+# litter depth center is really high at 80, which doesn't make a ton of sense, let's take the average of the other four depths and paste it there
+L1_data[L1_data$Transect == "JORN129" & L1_data$Remarks == "30", "Litter_depth_center"] <- 45
+
+# create a list of unique bag IDs
+BagIDs <- unique(quad_mass$Bag_ID)
+# pull metadata for each quadrat
+quad_samp_metadata <- L1_data %>%
+  filter(BagID %in% BagIDs)
+
+library(stringr)
+
+SRER_n <- quad_samp_metadata %>%
+  filter(str_starts(Transect, "SRER"))
+
+JORN_n <- quad_samp_metadata %>%
+  filter(str_starts(Transect, "JORN"))
+
+MOAB_n <- quad_samp_metadata %>%
+  filter(str_starts(Transect, "MOAB"))
+
+ONAQ_n <- quad_samp_metadata %>%
+  filter(str_starts(Transect, "ONAQ"))
+
+
+# merge the two data frames
+quad_fig_data <- merge(QuadMassStats, quad_samp_metadata,
+                       by.x = "BagID", by.y = "BagID")
+
+quad_fig_data[, 38:42] <- lapply(quad_fig_data[, 38:42], as.numeric)
+
+# create a new data frame and calculate the mean depth
+QuadDepthStats <- quad_fig_data %>%
+  dplyr::mutate(
+    mean_depth = rowMeans(
+      dplyr::across(
+        c(
+          Litter_depth_center,
+          Litter_depth_north,
+          Litter_depth_east,
+          Litter_depth_south,
+          Litter_depth_west
+        )
+      ),
+      na.rm = TRUE
+    )
+  )
+
+# QuadDepthStats <- QuadDepthStats %>%
+#   select(!c("Geometry", "Ortho.Height", "Instrument.Ht", "Quadrat_checklist"))
+
+litter_mass_depth_lm <- lm(mass_area_g_m2 ~ mean_depth + 0, data = QuadDepthStats)
+summary(litter_mass_depth_lm)
+
+# generate 95% prediction intervals
+litter_mass_depth_pred_int_df <- data.frame(mean_depth = seq(
+  min(QuadDepthStats$mean_depth),
+  max(QuadDepthStats$mean_depth),
+  length.out = 200))
+
+litter_mass_depth_pred_int <- predict(litter_mass_depth_lm,
+                                      newdata = litter_mass_depth_pred_int_df,
+                                      interval = "prediction",
+                                      level = 0.95)
+
+pred_int_data <- cbind(litter_mass_depth_pred_int_df, litter_mass_depth_pred_int)
+
+QuadDepthStats$Site <- 
+  factor(QuadDepthStats$Site,
+         levels = c("JORN", "ONAQ", "SRER", "MOAB"),
+         labels = c("Chihuahuan Desert", "Great Basin Desert", "Sonoran Desert",
+                   "Colorado Plateau"))
+
+depth_mass <- ggplot(QuadDepthStats, aes(x = mean_depth, y = mass_area_g_m2)) +
+  stat_smooth(method = "lm", formula = y ~ x + 0, fullrange = FALSE, color = "black", linewidth = 2,
+              fill = "black") +
+  geom_ribbon(
+  data = pred_int_data,
+  aes(x = mean_depth, ymin = lwr, ymax = upr),
+  inherit.aes = FALSE,
+  alpha = 0.2,
+  fill = "grey"
+) +
+  geom_point(pch = 21, size = 5, color = "black", aes(fill = Site)) +
+  scale_fill_manual(values = c("darkgoldenrod", "darkseagreen3", "olivedrab", "sienna2")) +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x + 0,
+  parse = TRUE,
+  size = 7,                
+  fontface = "bold",
+  label.x = "right",
+  label.y = "bottom"
+) +
+  # scale_x_continuous(expand = c(0, 0)) +
+  # scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0, NA), ylim = c(0, NA)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Litter Depth (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_blank(),
+    legend.text = element_text(color="black", size=18),
+    legend.position = c(.175,.875),
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) 
+
+depth_mass
+
+ggsave("~/Desktop/Litter_Mass_Depth_Regression_15July2026.pdf", depth_mass, width = 9, height = 6)
+
+# Get all influence measures
+outlier_metrics <- influence.measures(litter_mass_depth_lm)
+summary(outlier_metrics)
+
+outlier_rows <- rownames(summary(outlier_metrics))
+
+QuadDepthOutliers <- QuadDepthStats[rownames(QuadDepthStats) %in% outlier_rows, ]
+
+outlier_IDs <- QuadDepthOutliers$BagID
+  
+depth_mass_inf <- ggplot(QuadDepthStats, aes(x = mean_depth, y = mass_area_g_m2)) +
+  stat_smooth(method = "lm", formula = y ~ x + 0, fullrange = FALSE, color = "forestgreen",
+              fill = "forestgreen") +
+ggrepel::geom_text_repel(
+    data = QuadDepthOutliers,
+    aes(x = mean_depth, y = mass_area_g_m2, label = QuadDepthOutliers$BagID),
+    size = 5
+  ) +
+  geom_point(pch = 21, size = 5, color = "black", fill = "forestgreen") +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x + 0,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), breaks = c(0, 500, 1000, 1500, 2000,
+                                                  2500, 3000, 3500, 4000)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Litter Depth (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) 
+
+depth_mass_inf
+```
+
+```{r}
+
+QuadDepthStats_under10mm <- QuadDepthStats %>%
+  filter(mean_depth < 10)
+
+litter_mass_depth_lm_under10mm <- lm(mass_area_g_m2 ~ mean_depth + 0, data = QuadDepthStats_under10mm)
+summary(litter_mass_depth_lm_under10mm)
+
+# Get all influence measures
+outlier_metrics_10 <- influence.measures(litter_mass_depth_lm_under10mm)
+summary(outlier_metrics_10)
+
+outlier_rows_10 <- rownames(summary(outlier_metrics_10))
+
+QuadDepthOutliers_10 <- QuadDepthStats_under10mm[rownames(QuadDepthStats_under10mm) %in% outlier_rows_10, ]
+
+outlier_IDs_10 <- QuadDepthOutliers_10$BagID
+  
+
+depth_mass_under10mm <- ggplot(QuadDepthStats_under10mm, aes(x = mean_depth, y = mass_area_g_m2)) +
+  stat_smooth(method = "lm", formula = y ~ x + 0, fullrange = FALSE, color = "forestgreen",
+              fill = "forestgreen") +
+  geom_point(pch = 21, size = 5, color = "black", fill = "forestgreen") +
+ggrepel::geom_text_repel(
+    data = QuadDepthOutliers_10,
+    aes(x = mean_depth, y = mass_area_g_m2, label = QuadDepthOutliers_10$BagID),
+    size = 5
+  ) +
+  ggpmisc::stat_poly_eq(
+  aes(label = paste(after_stat(eq.label), after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*")),
+  formula = y ~ x + 0,
+  parse = TRUE,
+  size = 7,                # font size
+  fontface = "bold"        # <-- makes text bold
+) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+   guides(fill = guide_legend(override.aes = list(shape = 21, color = "black"))) +
+ labs(x = "Mean Litter Depth (mm)",
+     y = expression("Nonwoody Litter (g/m"^2*")")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color="black", size=16),
+    axis.text.y = element_text(color="black", size=16),
+    legend.title = element_text(color="black", size=16),
+    legend.text = element_text(color="black", size=16),
+    legend.position = "right",
+    axis.title.x = element_text(color="black", size=20),
+    axis.title.y = element_text(color="black", size=20, angle=90),
+    panel.grid.major = element_blank(), # switch off major grid lines
+    panel.grid.minor = element_blank(), # switch off minor grid lines
+    panel.border = element_rect(colour = "black", fill=NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75)) 
+
+depth_mass_under10mm
+
+```
+
+```{r}
+
+quad_CN_log <- merge(quad_mass_clean, quad_samp_metadata,
+                       by.x = "Bag_ID", by.y = "BagID")
+
+quad_CN_log <- quad_CN_log[!quad_CN_log$Litter_type == "Invertebrate", ]
+
+quad_CN_log$Litter_type[(quad_CN_log$Litter_type == "UltraFine")] <- "Ambiguous"
+
+quad_CN_log$Litter_type[grepl("_", quad_CN_log$Litter_type)] <- "Mixed"
+
+quad_CN_log$Site <- quad_CN_log$Transect
+
+quad_CN_log$Site[grepl("SRER", quad_CN_log$Site)] <- "SRER"
+
+quad_CN_log$Site[grepl("JORN", quad_CN_log$Site)] <- "JORN"
+
+quad_CN_log$Site[grepl("MOAB", quad_CN_log$Site)] <- "MOAB"
+
+quad_CN_log$Site[grepl("ONAQ", quad_CN_log$Site)] <- "ONAQ"
+
+quad_CN_log$Litter_type[(quad_CN_log$Litter_type == "Grass ")] <- "Grass"
+
+quad_CN_log$Litter_type[(quad_CN_log$Litter_type == "Leaves ")] <- "Leaves"
+
+quad_counts <- quad_CN_log %>%
+  count(Site, Litter_type) %>%
+  group_by(Site) %>%
+  mutate(
+    perc = round(100 * n / sum(n), 1)
+  ) %>%
+  ungroup()
+
+quad_counts <- quad_counts %>%
+  mutate(
+    Site = factor(Site),
+    y_lab = 25 + (as.numeric(Site) - 1) * 1.5   # stack labels upward
+  )
+
+pd <- position_dodge(width = 0.8)
+
+ggplot(quad_CN_log, aes(x = Litter_type, y = Litter_mass_final_g, fill = Site)) +
+  geom_boxplot(position = pd) +
+  geom_text(
+    data = quad_counts,
+    aes(x = Litter_type, y = y_lab, color = Site, label = paste0(perc, "%")),
+    fontface = "bold",
+    size = 7,
+    position = pd,
+    inherit.aes = FALSE
+  ) +
+  labs(y = "Litter mass (g)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, angle = 45, hjust = 1),
+    axis.text.y = element_text(color = "black", size = 12),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90)
+  )
+
+
+```
+
+```{r}
+
+ggplot(quad_CN_log, aes(x = Litter_type, y = Litter_mass_final_g,
+                        fill = Site)) +
+  geom_boxplot() +
+  labs(y = "Litter mass (g)") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12, angle = 45, hjust = 1),
+    axis.text.y = element_text(color = "black", size = 12),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(color = "black", size = 20, angle = 90))
+
+ggsave("~/Desktop/Litter_Quadrat_Samples.pdf", plot = last_plot(),
+       width = 11, height = 7)
+
+
+```
+
+```{r}
+quad_CN_samples <- quad_CN_log %>%
+  filter(Litter_type %in% c("Ambiguous", "Forbs", "Grass", "Leaves",
+                            "ReproductiveParts")) %>%
+  filter(Litter_mass_final_g > 0.01)
+ 
+write.csv(quad_CN_samples, "quad_CN_sample_log.csv")
+
+ quad_CN_samples_Site <- quad_CN_samples %>%
+   filter(Microsite %in% c("CANOPY", "OPEN")) %>%
+   group_by(Site, Litter_type, Microsite) %>%
+   summarize(n = n())
+ 
+ write.csv(quad_CN_samples_Site, "quad_CN_samples_site_microsite_type_summary.csv")
+```

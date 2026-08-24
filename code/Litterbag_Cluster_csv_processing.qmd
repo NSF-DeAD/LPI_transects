@@ -1,0 +1,74 @@
+---
+title: "Preparing GPS Coordinates for PPK Corrections"
+format: html
+editor: visual
+---
+
+## README
+
+```{r}
+
+library(readr)
+library(plyr)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(tools)
+library(fs)
+
+# create and use a config file to pull data directly from the shared DeAD Dropbox folder
+# (see: https://rstudio.github.io/config/articles/introduction.html)
+DeAD_Data <- config::get()
+
+
+```
+
+```{r}
+
+# define L0 filepath
+SRER_Litterbag_Clusters_L0_path <- file.path(DeAD_Data, "SRER",
+                                             "Litterbag_Clusters",
+                                             "Level_0", "csv_files")
+
+# define L0 directory
+SRER_Litterbag_Clusters_L0_dir <- dir(SRER_Litterbag_Clusters_L0_path)
+
+# set working directory for the L0 filepath
+setwd(SRER_Litterbag_Clusters_L0_path)
+
+# read in L0 csv files and simultaneously create an L1 dataframe containing a new column for transect ID
+SRER_Litterbag_Clusters_L1_data <- SRER_Litterbag_Clusters_L0_dir %>%
+  set_names(~ file_path_sans_ext(basename(.x))) %>%
+  map(~ read_csv(.x, col_types = cols(.default = "c"))) %>%
+  bind_rows(.id = "Microsite") %>%
+  mutate(Microsite = str_remove_all(Microsite, ".csv")) %>%
+  mutate(Microsite = str_remove(Microsite, "_[12]$"))
+
+# define L1 filepath
+SRER_Litterbag_Clusters_L1_path <- file.path(DeAD_Data, "SRER",
+                                             "Litterbag_Clusters",
+                                             "Level_1")
+
+# write a csv file of the L1 data (compiled)
+write.csv(SRER_Litterbag_Clusters_L1_data, file.path(SRER_Litterbag_Clusters_L1_path, "SRER_Litterbag_Clusters_Deployment_Data.csv"), row.names = FALSE)
+
+```
+
+```{r}
+
+# define ubx filepath
+SRER_Litterbag_Clusters_ubx_path <- file.path(DeAD_Data, "SRER",
+                                             "Litterbag_Clusters",
+                                             "ubx_files")
+# list all .ubx files
+SRER_ubx_files <- dir_ls(SRER_Litterbag_Clusters_ubx_path, glob = "*.ubx")
+
+library(here)
+
+convbin_path <- here("RTKLIB_2.4.3_b34", "bin", "convbin.exe")
+
+for (f in SRER_ubx_files) {
+  cmd <- paste(shQuote(convbin_path), shQuote(f))
+  system(cmd)
+}
+```

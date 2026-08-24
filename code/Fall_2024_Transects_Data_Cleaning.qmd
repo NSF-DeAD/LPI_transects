@@ -16,22 +16,36 @@ This code reads in individual csv files containing modified line point-intercept
 
 A table of common plant codes can be found in the shared Google Drive: <https://docs.google.com/spreadsheets/d/1MiFpAYBabtR1PBp5AB1PNHrgZP77kSkH97oP45B_ub0/edit?usp=sharing>
 
-## Load Packages
+## Load Packages and Define File Paths
 
 ```{r setup}
 
-library(here)
 library(readr)
 library(plyr)
 library(dplyr)
 library(stringr)
+library(ggplot2)
 
-# a data folder thing
-# YOU NEED TO: copy and paste this link in a web browser to automatically download all the csv files
-SRER_L0_Dropbox_folder <- "https://www.dropbox.com/scl/fo/335jlndgdw6zqgm0sfcbv/ANM7J3llBE7O8h1pV3-EjyM?rlkey=8aecpr9det8diiltgbtngp82u&st=cjcuyud1&dl=1"
+# create and use a config file to pull data directly from the shared DeAD Dropbox folder
+# (see: https://rstudio.github.io/config/articles/introduction.html)
+DeAD_Data <- config::get()
 
-# YOU NEED TO: directions here
-data_folder_name <- 
+# define file paths for photographs associated with the data
+SRER_LPI_F24_photo_path <- file.path(DeAD_Data, "SRER",
+                               "Transect_LPI_Data",
+                               "Photographs", "Fall_2024")
+
+JORN_LPI_F24_photo_path <- file.path(DeAD_Data, "JORN",
+                               "Transect_LPI_Data",
+                               "Photographs", "Fall_2024")
+
+MOAB_LPI_F24_photo_path <- file.path(DeAD_Data, "MOAB",
+                               "Transect_LPI_Data",
+                               "Photographs", "Fall_2024")
+
+ONAQ_LPI_F24_photo_path <- file.path(DeAD_Data, "ONAQ",
+                               "Transect_LPI_Data",
+                               "Photographs", "Fall_2024")
 
 ```
 
@@ -43,64 +57,58 @@ data_folder_name <-
 
 **Brief Description of Modified LPI Protocol:** Transects ran S to N and were read on the W side. A pin flag was dropped every 1 m along the transect. All vegetation layers (including canopies) intersecting this pin were noted as dead or living and were recorded to species if known and life-form if not. The top layer height (cm), soil surface texture, litter type, litter depth (mm), and microsite were also recorded. A SparkFun RTK Express GNSS was used to record the location of each transect point. Transects were shortened from 90 m to 50 m after the first two days to increase efficiency and spatial coverage, as preliminary analyses suggested randomly subsampling 50 points from the 90 m transects generated patterns highly similar to those found in the full datasets.
 
-90 m transects: SRER006, SRER012, SRER023, SRER026, SRER027, SRER028
+**90 m transects:** SRER006, SRER012, SRER023, SRER026, SRER027, SRER028
 
-50 m transects: SRER001, SRER007, SRER008, SRER014, SRER015, SRER017, SRER018, SRER019, SRER020, SRER024, SRER025, SRER029, SRER030, SRER031, SRER039, SRER041, SRER043, SRER045
+**50 m transects:** SRER001, SRER007, SRER008, SRER014, SRER015, SRER017, SRER018, SRER019, SRER020, SRER024, SRER025, SRER029, SRER030, SRER031, SRER039, SRER041, SRER043, SRER045
 
 ![Transects completed at SRER from 21-26 September 2024.](images/SRER_completed_sites_2024_sat-back.jpg){fig-align="center"}
 
-**Photographs:** Photographs associated with specific transects or transect points are considered data and are stored in Dropbox (ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> SRER \> Transect_LPI_Data \> Photographs \> Fall 2024). Candid photographs can also be found in Dropbox (ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Photos \> 2024 \> SRER).
+**Photographs:** Photographs associated with specific transects or transect points are considered data and are stored in Dropbox (*SRER_LPI_F24_photo_path*).
 
 ### Read In and Clean Up Data
 
 There are 24 csv files each containing data for one transect. These are considered level 0 data.
 
-**L0 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> SRER \> Transect_LPI_Data \> Level_0 \> Fall_2024 \> csv_files
-
-The *read_csv* function works with Dropbox links for individual csv files, but I can't figure out how to get it to work for a folder. There is a 'dropbox' R package I can look into at some point.
-
 ```{r import_SRER_L0}
 
-### LEVEL 0 DATA ###
+# define L0 filepath
+SRER_LPI_F24_L0_path <- file.path(DeAD_Data, "SRER", "Transect_LPI_Data",
+                                  "Level_0", "Fall_2024", "csv_files")
 
-# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
-# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
-# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
-SRER_L0_Dropbox_folder <- "https://www.dropbox.com/scl/fo/335jlndgdw6zqgm0sfcbv/ANM7J3llBE7O8h1pV3-EjyM?rlkey=8aecpr9det8diiltgbtngp82u&st=cjcuyud1&dl=1"
+# define L0 directory
+SRER_LPI_F24_L0_dir <- dir(SRER_LPI_F24_L0_path)
 
-# specify the local folder containing the downloaded L0 transect data
-setwd("/Users/AlexiBesser/Downloads/SRER_LPI_L0_Fall_2024_csv_files")
-SRER_L0_data_files <- dir("/Users/AlexiBesser/Downloads/SRER_LPI_L0_Fall_2024_csv_files")
+### SIMULTANEOUSLY READ IN LEVEL 0 DATA AND WRITE LEVEL 1 DATA ###
 
+# set working directory for the L0 filepath
+setwd(SRER_LPI_F24_L0_path)
+# read in L0 csv files and simultaneously create an L1 dataframe containing a new column for transect ID
+SRER_L1_data <- read_csv(SRER_LPI_F24_L0_dir, id = "Transect") %>%
+  mutate(Transect = str_remove_all(Transect, ".csv"))
 
-### LEVEL 1 DATA ###
+# define L1 filepath
+SRER_LPI_F24_L1_path <- file.path(DeAD_Data, "SRER", "Transect_LPI_Data",
+                                  "Level_1", "Fall_2024", "csv_file")
 
-# read in L0 csv files and create a new column for transect ID
-SRER_L1_data <- read_csv(SRER_L0_data_files, id = "Transect") %>%
-   mutate(Transect = str_remove_all(Transect, ".csv"))
-
-# write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder
-write.csv(SRER_all_data, "/Users/AlexiBesser/Desktop/SRER_LPI_L1_Fall_2024_Data.csv")
+# write a csv file of the L1 data (compiled)
+write.csv(SRER_L1_data, file.path(SRER_LPI_F24_L1_path, "SRER_LPI_L1_Fall_2024_Data.csv"), row.names = FALSE) # this saves it to our shared DeAD Dropbox folder
 
 ```
 
-There is now 1 csv file containing data for all 24 transects. This is considered level 1 data.
-
-**L1 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> SRER \> Transect_LPI_Data \> Level_1 \> Fall_2024 \> csv_file
+There is now 1 csv file containing data compiled for all 24 transects. This is considered level 1 data.
 
 ```{r read_SRER_L1}
 
 # read in L1 transect data
-# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
-SRER_L1_data <- read.csv("https://www.dropbox.com/scl/fi/5xejubt2xtr11ewffrigz/SRER_LPI_L1_Fall_2024_Data.csv?rlkey=3lxegw4gdgjp818bpbirucvv8&st=sn5id9bl&dl=1")
+SRER_L1_data <- read.csv(file.path(SRER_LPI_F24_L1_path, "SRER_LPI_L1_Fall_2024_Data.csv"))
 
 ```
 
 Investigate and rectify duplicate rows.
 
-NOTE: The code below focuses on rectifying the LPI data and ignores the GPS data (e.g., *Geometry*, *Latitude*, and *Longitude* columns). Re-saving points in the SW Maps Application to capture the correct location creates a duplicate point.
+NOTE: The code below focuses on rectifying the LPI data, giving consideration to GPS data (e.g., *Geometry*, *Latitude*, and *Longitude* columns) when possible.
 
-```{r merge_duplicates}
+```{r SRER_merge_duplicates}
 
 # create a data frame for duplicate points 
 SRER_duplicate_points <- SRER_L1_data %>%
@@ -110,119 +118,135 @@ SRER_duplicate_points <- SRER_L1_data %>%
 
 # there are 49 rows of duplicate points
 
-# SRER006 (75): 2 rows with "75 m" for Remarks column ("21" and "22" in ID column). All the attributes for one of these rows (ID "21") are empty - this one will be removed from the data frame.
-SRER_trimmed_data <- SRER_L1_data[!(SRER_L1_data$Transect=="SRER006" & SRER_L1_data$ID == "21"),]
+# SRER006 (Remarks "75"): 2 rows with "75 m" for Remarks column ("21" and "22" in ID column). All the attributes for one of these rows (ID "21") are empty. The Geometry values for the two rows are similar (ID "21": POINTZ(-110.848104512 31.781552055 1178.904); ID "22": POINTZ(-110.848104808 31.781553293 1179.454)). The row for ID "21" will be removed from the data frame.
+SRER_trimmed_data <- SRER_L1_data[!(SRER_L1_data$Transect == "SRER006" & SRER_L1_data$ID == "21"),]
 
-# SRER006 (48): 3 rows with "48 m" for Remarks column ("49", "50", "52" in ID column). All the attributes for one of these rows (ID "50") are empty - this one will be removed from the data frame. ID "52" contains the file name for a photograph ("20240921162905.jpg") - this file name will be copied and pasted into the Photo column for the ID "49" row and the ID "50" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "50"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "52"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "49", "Photo"] <- "20240921162905.jpg"
+# SRER006 (Remarks "48"): 3 rows with "48 m" for Remarks column ("49", "50", "52" in ID column). The Geometry values for all three rows are similar (ID "49": POINTZ(-110.848153267 31.781342732 1180.673); ID "50": POINTZ(-110.848154085 31.781342255 1180.76) ; ID "52": POINTZ(-110.848154272 31.781341832 1180.79)). All the attributes for one of these rows (ID "50") are empty - this one will be removed from the data frame. ID "52" contains the file name for a photograph ("20240921162905.jpg") - this file name will be copied and pasted into the Photo column for the ID "49" row and the ID "50" row will be deleted.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "50"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "52"),]
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "49", "Photo"] <- "20240921162905.jpg"
 
-# SRER006 (46): 2 rows with "46 m" for Remarks column ("54" and "57" in ID column). ID "57" contains the file name for a photograph ("20240921163408.jpg") - this file name will be copied and pasted into the Photo column for the ID "54" row and the ID "57" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "57"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "54", "Photo"] <- "20240921163408.jpg"
+# SRER006 (Remarks "46"): 2 rows with "46 m" for Remarks column ("54" and "57" in ID column). The Geometry values for these two rows are similar (ID "54": POINTZ(-110.848157925 31.781324413 1178.526); ID "57": POINTZ(-110.848158007 31.7813241 1178.473)). ID "57" contains the file name for a photograph ("20240921163408.jpg") - this file name will be copied and pasted into the Photo column for the ID "54" row and the ID "57" row will be deleted.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "57"),]
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "54", "Photo"] <- "20240921163408.jpg"
 
-# SRER006 (12): 2 rows with "12 m" for Remarks column ("95" and "96" in ID column). All the attributes for one of these rows (ID "96") are empty - this one will be removed from the data frame.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "96"),]
+# SRER006 (Remarks "12"): 2 rows with "12 m" for Remarks column ("95" and "96" in ID column). The Geometry values for these two rows are similar (ID "95": POINTZ(-110.848327015 31.781065428 1177.602); ID "96": POINTZ(-110.848330817 31.78106432 1176.964)). All the attributes for one of these rows (ID "96") are empty - this one will be removed from the data frame.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "96"),]
 
-# SRER006: 6 rows with "NA" for Remarks column. All appear to be different locations along the transect. There are no rows for points at 90, 86, 85, 84, 83, or 81 m. These rows must correspond to those points. However, this transect will be truncated from 90 m to 50 m in a later code chunk, so these rows will be deleted anyway. 
+# SRER006: 6 rows with "NA" for Remarks column. All appear to be different locations along the transect. There are no rows for points at 90, 86, 85, 84, 83, or 81 m. These rows must correspond to those points. We can work out the likely order of these points using the IDs and GPS coordinates.
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "2", "Remarks"] <- "90"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "7", "Remarks"] <- "86"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "10", "Remarks"] <- "85"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "11", "Remarks"] <- "84"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "12", "Remarks"] <- "83"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$ID == "14", "Remarks"] <- "81"
 
-# SRER007 (12): 2 rows with "12" for Remarks column ("40" and "41" in ID column). All the attributes for one of these rows (ID "41") are empty - this one will be removed from the data frame.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER007" & SRER_trimmed_data$ID == "41"),]
+# SRER007 (Remarks "12"): 2 rows with "12" for Remarks column ("40" and "41" in ID column). The Geometry values for these two rows are similar (ID "40": POINTZ(-110.829792702 31.865363447 1097.895); ID "41": POINTZ(-110.829793122 31.865363252 1098.037)). All the attributes for one of these rows (ID "41") are empty - this one will be removed from the data frame.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER007" & SRER_trimmed_data$ID == "41"),]
 
-# SRER012 (45): 2 rows with "45" for Remarks column ("46" and "47" in ID column). These rows have conflicting attributes. There is no row with "44" in the Remarks column for this transect, so the row with the later timestamp ("47" in ID column) must be from the 44 m point. 
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER012" & SRER_trimmed_data$ID == "47", "Remarks"] <- "44"
+# SRER012 (Remarks "45"): 2 rows with "45" for Remarks column ("46" and "47" in ID column). These rows have conflicting attributes. There is no row with "44" in the Remarks column for this transect, so the row with the later timestamp ("47" in ID column) must be from the 44 m point. 
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER012" & SRER_trimmed_data$ID == "47", "Remarks"] <- "44"
 
-# SRER014 (22): 2 rows with "22" for Remarks column ("83" and "84" in ID column). The ID "83" row contains an "N" for Top_layer but all other attributes are empty. The ID "84" row is missing a value for Top_layer, so "N" will be copied and pasted there. The ID "83" row will be removed from the data frame.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER014" & SRER_trimmed_data$ID == "83"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER014" & SRER_trimmed_data$ID == "84", "Top_layer"] <- "N"
+# SRER014 (Remarks "22"): 2 rows with "22" for Remarks column ("83" and "84" in ID column). The ID "83" row contains an "N" for Top_layer but all other attributes are empty. The ID "84" row is missing a value for Top_layer, so "N" will be copied and pasted there. The ID "83" row will be removed from the data frame.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER014" & SRER_trimmed_data$ID == "83"),]
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER014" & SRER_trimmed_data$ID == "84", "Top_layer"] <- "N"
 
-# SRER017 (8): 2 rows with "8" for Remarks column ("45" and "46" in ID column). These rows have conflicting attributes. There is no row with "7" in the Remarks column for this transect, so the row with the later timestamp ("46" in ID column) must be from the 7 m point. 
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER017" & SRER_trimmed_data$ID == "46", "Remarks"] <- "7"
+# SRER017 (Remarks "8"): 2 rows with "8" for Remarks column ("45" and "46" in ID column). These rows have conflicting attributes. There is no row with "7" in the Remarks column for this transect, so the row with the later timestamp ("46" in ID column) must be from the 7 m point. 
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER017" & SRER_trimmed_data$ID == "46", "Remarks"] <- "7"
 
 # SRER020: 3 rows with "N facing slope (less dense vegetation)" for Remarks column ("55", "56", "58" in ID column). All the attributes for the ID "55" and "56" rows are empty. The ID "58" row contains a file name ("20240925221036.jpg") in the Photo column. All of these will be deleted from the data frame, as this was a post hoc photograph of half the transect rather than a point along the transect.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "55"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "56"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID == "58"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER020" & SRER_trimmed_data$ID == "55"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER020" & SRER_trimmed_data$ID == "56"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER020" & SRER_trimmed_data$ID == "58"),]
 
-# SRER025 (38): 2 rows with "38" for Remarks column ("14" and "17" in ID column). The ID "17" row contains the file name for a photograph ("20240924143857.jpg") - this file name will be copied and pasted into the Photo column for the ID "14" row and the ID "17" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "17"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "14", "Photo"] <- "20240924143857.jpg"
+# SRER025 (Remarks "38"): 2 rows with "38" for Remarks column ("14" and "17" in ID column). The Geometry values for these two rows are similar (ID "14": POINTZ(-110.959702028 31.812470223 912.209); ID "17": POINTZ(-110.959701763 31.812469525 912.171)). The ID "17" row contains the file name for a photograph ("20240924143857.jpg") - this file name will be copied and pasted into the Photo column for the ID "14" row and the ID "17" row will be deleted.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$ID == "17"),]
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$ID == "14", "Photo"] <- "20240924143857.jpg"
 
-# SRER025 (21): 3 rows with "21" for Remarks column ("36", "37", "39" in ID column). All the attributes for the ID "37" row are empty - this row will be deleted. The ID "39" row contains the file name for a photograph ("20240924145310.jpg") - this file name will be copied and pasted into the Photo column for the ID "36" row and the ID "39" row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "37"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "39"),]
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "36", "Photo"] <- "20240924145310.jpg"
+# SRER025 (Remarks "21"): 3 rows with "21" for Remarks column ("36", "37", "39" in ID column). All the attributes for the ID "37" row are empty - this row will be deleted. The ID "39" row contains the file name for a photograph ("20240924145310.jpg") - this file name will be copied and pasted into the Photo column for the ID "36" row and the ID "39" row will be deleted.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$ID == "37"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$ID == "39"),]
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$ID == "36", "Photo"] <- "20240924145310.jpg"
 
-# SRER027 (13): 2 rows containing "13 m" for Remarks column ("79" and "80" in ID column). All the attributes for the ID "80" row are empty - this row will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "80"),]
+# SRER027 (Remarks "13"): 2 rows containing "13 m" for Remarks column ("79" and "80" in ID column). The Geometry values for these two rows are similar (ID: "79": POINTZ(-110.899253787 31.772064387 1122.938); ID "80": POINTZ(-110.899254913 31.772063382 1122.893)). All the attributes for the ID "80" row are empty - this row will be deleted.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$ID == "80"),]
 
-# SRER027 (26): 2 rows containing "26 m" for Remarks column ("66" and "67" in ID column). These rows have conflicting attributes. There is no row with "25" in the Remarks column for this transect, so the row with the later timestamp ("67" in ID column) must be from the 25 m point. 
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Remarks"] <- "25"
+# SRER027 (Remarks "26"): 2 rows containing "26 m" for Remarks column ("66" and "67" in ID column). These rows have conflicting attributes. There is no row with "25" in the Remarks column for this transect, so the row with the later timestamp ("67" in ID column) must be from the 25 m point. 
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$ID == "67", "Remarks"] <- "25"
 
-# SRER031 (2): 2 rows with "2" for Remarks column ("55" and "57" in ID column). The ID "57" row contains the file name for a photograph ("20240925161056.jpg") - this file name will be copied and pasted into the Photo column for the ID "55" row and the ID "57" row will be deleted.
+# SRER031 (Remarks "2"): 2 rows with "2" for Remarks column ("55" and "57" in ID column). The ID "57" row contains the file name for a photograph ("20240925161056.jpg") - this file name will be copied and pasted into the Photo column for the ID "55" row and the ID "57" row will be deleted.
 SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER031" & SRER_trimmed_data$ID == "57"),]
 SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER031" & SRER_trimmed_data$ID == "55", "Photo"] <- "20240925161056.jpg"
 
-# SRER043 (30): 3 rows with "30" for Remarks column ("22", "23", "24" in ID column). All the attributes for the ID "23" and "24" rows are empty - these rows will be deleted.
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER043" & SRER_trimmed_data$ID == "23"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER043" & SRER_trimmed_data$ID == "24"),]
+# SRER043 (Remarks "30"): 3 rows with "30" for Remarks column ("22", "23", "24" in ID column). The Geometry values are similar (ID "22": POINTZ(-110.817956487 31.89407949 1034.609); ID "23": POINTZ(-110.817956108 31.894079178 1034.565); ID "24": POINTZ(-110.817956252 31.894079342 1034.546)). All the attributes for the ID "23" and "24" rows are empty - these rows will be deleted.
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER043" & SRER_trimmed_data$ID == "23"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect == "SRER043" & SRER_trimmed_data$ID == "24"),]
 
-# SRER028: 9 rows with "NA" for Remarks column. There are no rows for points at 7 through 15 m. These rows must represent those points in descending order.
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "85", "Remarks"] <- "15"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "86", "Remarks"] <- "14"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "87", "Remarks"] <- "13"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "88", "Remarks"] <- "12"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "89", "Remarks"] <- "11"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "90", "Remarks"] <- "10"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "91", "Remarks"] <- "9"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "92", "Remarks"] <- "8"
+# SRER028: 9 rows with "NA" for Remarks column. There are no rows for points at 7 through 15 m. These rows must represent those points in descending order (based on ID, timestamp, and latitude).
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "85", "Remarks"] <- "15"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "86", "Remarks"] <- "14"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "87", "Remarks"] <- "13"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "88", "Remarks"] <- "12"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "89", "Remarks"] <- "11"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "90", "Remarks"] <- "10"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "91", "Remarks"] <- "9"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$ID == "92", "Remarks"] <- "8"
 SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "93", "Remarks"] <- "7"
+
+# double-check that no duplicate points remain
+SRER_trimmed_data %>%
+  group_by(Transect, Remarks) %>%
+  filter(n() > 1) %>%
+  ungroup() %>%
+  nrow()
 
 ```
 
 Look at unique *Remarks*. Remove rows that are not points on transects but rather notes at the end of transects and rows with "NA" in every column.
 
-```{r clean_Remarks}
+```{r SRER_clean_Remarks}
 
 # extract and review unique Remarks
 unique(SRER_trimmed_data$Remarks)
 
 # delete rows that contain notes rather than data
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="lots of cow activity"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "lots of cow activity"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="lots of cattle activity in the area, stomped grass and cow pies, lots of PRVE larger than usual, photos for measuriments and ids included"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "lots of cattle activity in the area, stomped grass and cow pies, lots of PRVE larger than usual, photos for measuriments and ids included"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="revine, dense shrub S slope, new vegetation less dense N slope (photo facing S)"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "revine, dense shrub S slope, new vegetation less dense N slope (photo facing S)"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="new cactus, AHILL= ant hill as a microsite, EPIP=epiphyte,"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "new cactus, AHILL= ant hill as a microsite, EPIP=epiphyte,"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="note: interesting dung, antsloved it"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "note: interesting dung, antsloved it"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="note; all L-UNKNOWN IDs are most likely mesquite or acacia, photos included"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "note; all L-UNKNOWN IDs are most likely mesquite or acacia, photos included"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="more cows, lots of big prve, ants at 30-50m"),]
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "more cows, lots of big prve, ants at 30-50m"),]
 
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks=="TCAST=termite activity/mounds/tunnels"),]
-
-# create a data frame for rows with an "NA" for Remarks
-SRER_NA_Remarks <- subset(SRER_trimmed_data, is.na(Remarks))
-
-# delete the 7 rows that have "NA" for every column
-SRER_trimmed_data <- SRER_trimmed_data[!(is.na(SRER_trimmed_data$Remarks)),]
-
-```
-
-Shorten the six 90 m transects (SRER006, SRER012, SRER023, SRER026, SRER027, SRER028) to 50 m.
-
-```{r cut_90m}
+SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks == "TCAST=termite activity/mounds/tunnels"),]
 
 # keep only the first two characters of values in the Remarks column (to remove the "m" from some of the rows)
 SRER_trimmed_data <- SRER_trimmed_data %>%
   mutate(Remarks = substr(Remarks, 1, 2))
 
-# change the class of the Remarks column to numeric
+# make the Remarks column numeric
 SRER_trimmed_data$Remarks <- as.numeric(SRER_trimmed_data$Remarks)
+
+# create a data frame for rows with an "NA" for Remarks
+SRER_NA_Remarks <- subset(SRER_trimmed_data, is.na(Remarks))
+
+# delete the 1 row that has "NA" for every column
+SRER_trimmed_data <- SRER_trimmed_data[!(is.na(SRER_trimmed_data$Remarks)),]
+
+# double-check unique Remarks
+sort(unique(SRER_trimmed_data$Remarks))
+
+```
+
+Shorten the six 90 m transects (SRER006, SRER012, SRER023, SRER026, SRER027, SRER028) to 50 m.
+
+```{r SRER_cut_90m}
 
 # filter out and delete points 51-90 for the six 90 m transects
 SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks >= 51),]
@@ -231,7 +255,7 @@ SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Remarks >= 51),]
 
 There are now 1,200 rows in the trimmed data frame! 24 transects x 50 points per transect = 1,200 data points, so this makes sense, but double-check that there are 50 rows for every transect.
 
-```{r check_rows_per_transect}
+```{r SRER_check_rows_per_transect}
 
 # create a character string of the transects
 SRER_Transects <- unique(SRER_trimmed_data$Transect)
@@ -249,125 +273,239 @@ for (i in SRER_Transects) {
 
 Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
 
-```{r clean_Top_layer}
+```{r SRER_clean_Top_layer}
 
 # create a data frame for rows with an "NA" for Top_layer
 SRER_NA_Top_layer <- subset(SRER_trimmed_data, is.na(Top_layer))
 
 # there are 10 rows that have an "NA" for Top_layer
 
-# SRER027 (25): Lower_1 = "L-OTHER"; Lower_1_other = "CAER"; Lower_2 = "D-PGRASS"; Top_height = "65" - which seems reasonable for CAER, so let's go ahead and assume the top layer should be CAER
+# SRER027 (25 m): Lower_1 = "L-OTHER"; Lower_1_other = "CAER"; Lower_2 = "D-PGRASS"; Top_height = "65" - which seems reasonable for CAER, so let's go ahead and assume the top layer should be CAER
 # Delete "L-OTHER" from Lower_1 and paste it into Top_layer instead; delete "CAER" from Lower_1_other and paste it into Top_layer_other instead; delete "D-PGRASS" from Lower_2 and paste it into Lower_1 instead
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Top_layer"] <- "L-OTHER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1_other"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Top_layer_other"] <- "CAER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_2"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER027" & SRER_trimmed_data$ID == "67", "Lower_1"] <- "D-PGRASS"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$Remarks == 25, "Lower_1"] <- NA
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$Remarks == 25, "Top_layer"] <- "L-OTHER"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$Remarks == 25, "Lower_1_other"] <- NA
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$Remarks == 25, "Top_layer_other"] <- "CAER"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$Remarks == 25, "Lower_2"] <- NA
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER027" & SRER_trimmed_data$Remarks == 25, "Lower_1"] <- "D-PGRASS"
 
 # 4 of the remaining rows have "N" values for the lower layer columns and "0" values for the Top_height column, the other 5 have "NA" values for the lower layer columns and Top_height column, so let's go ahead and assume they all should have an "N" for Top_layer
 SRER_trimmed_data$Top_layer[is.na(SRER_trimmed_data$Top_layer)] <- "N"
 
-# rename "N" to "None"
-SRER_trimmed_data$Top_layer[SRER_trimmed_data$Top_layer=="N"] <- "NONE"
+# double-check that no "NA" values for Top_layer remain
+SRER_trimmed_data %>%
+  filter(is.na(Top_layer)) %>%
+  nrow()
+
+# rename "N" to "NONE"
+SRER_trimmed_data$Top_layer[SRER_trimmed_data$Top_layer == "N"] <- "NONE"
+
+# create a data frame for rows with an "L-OTHER" or "D-OTHER" for Top_layer to make sure they have values for Top_layer_other
+SRER_Top_layer_other <- SRER_trimmed_data %>%
+  filter(Top_layer == c("L-OTHER", "D-OTHER"))
+unique(SRER_Top_layer_other$Top_layer_other)
+
+# there are 2 rows that have "L-OTHER" for Top_layer but have "NA" for Top_layer_other
+# SRER001 (8 m): should be PRVE based on the Top_height (240) and data from the rest of that transect
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER001" & SRER_trimmed_data$Remarks == 8, "Top_layer_other"] <- "PRVE"
+
+# SRER025 (40 m): should be PRVE based on the Top_height (340) and data from the rest of that transect
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$Remarks == 40, "Top_layer_other"] <- "PRVE"
 
 # look at unique values for Top_layer_other
 unique(SRER_trimmed_data$Top_layer_other)
 
 # fix typos
 
-# "Y" appears once for transect SRER030 ("2" Remarks) - not sure what this is, so we have to delete this row
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER030" & SRER_trimmed_data$Remarks == "2"),]
+# "Y" appears once for transect SRER030 (2 m) - this is likely supposed to be "CY"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "Y"] <- "CY"
 
 # "mesquite" appears once for transect SRER006 - this must be PRVE
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="mesquite"] <- "PRVE"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "mesquite"] <- "PRVE"
 
 # "PRVEA" appears once for transect SRER006 - this should just be PRVE
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PRVEA"] <- "PRVE"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "PRVEA"] <- "PRVE"
 
 # "PVRE" appears once for transect SRER006 - this should just be PRVE
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="PVRE"] <- "PRVE"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "PVRE"] <- "PRVE"
 
 # "CUPA" appears once for transect SRER012 - this should be CEPA
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="CUPA"] <- "CEPA"
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "CUPA"] <- "CEPA"
 
 # "u" appears once for transect SRER018 but the Top_layer is listed as "L-PGRASS" so this must be a typo and can be converted to an "NA"
-SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other=="u"] <- NA
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "u"] <- NA
 
-# "ISTE" is listed under Top_layer_other for Transect SRER030 (13) but the Top_layer is listed as "D-CACT" - this is likely an error and will be replaced with "L-OTHER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER030" & SRER_trimmed_data$ID == "38", "Top_layer"] <- "L-OTHER"
+# "ISTE" is listed under Top_layer_other for Transect SRER030 (13 m) but the Top_layer is listed as "D-CACT" - this is likely an error and will be replaced with "L-OTHER"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER030" & SRER_trimmed_data$Remarks == 13, "Top_layer"] <- "L-OTHER"
 
-# "PRVE" is listed under Top_layer_other for Transect SRER006 (44) and the Top_layer is listed as "L-SHRUB" - replace this with "L-OTHER" for consistency
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID == "59", "Top_layer"] <- "L-OTHER"
+# "PRVE" is listed under Top_layer_other for Transect SRER006 (44 m) and the Top_layer is listed as "L-SHRUB" - replace this with "L-OTHER" for consistency
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 44, "Top_layer"] <- "L-OTHER"
+
+# we used the shorthand "EPIP" for epiphyte, so let's rename that since it is not a four-letter species code
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "EPIP"] <- "EPIPHYTE"
+
+# create a data frame for rows with "UNKNOWN" for Top_layer_other
+SRER_Top_layer_other_UNKNOWN <- subset(SRER_trimmed_data, Top_layer_other == "UNKNOWN")
+# all Top_layer_other "UNKNOWN" rows are from transect SRER039 - looking at the photographs and notes, they must be PRVE 
+SRER_trimmed_data$Top_layer_other[SRER_trimmed_data$Top_layer_other == "UNKNOWN"] <- "PRVE"
+
+# double-check unique values for Top_layer_other
+unique(SRER_trimmed_data$Top_layer_other)
+
+# check that all rows with values for Top_layer_other have "L-OTHER" or "D-OTHER" for Top_layer
+SRER_trimmed_data %>%
+  filter(!is.na(Top_layer_other)) %>%
+  distinct(Top_layer)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Top_layer have a value for Top_layer_other
+SRER_trimmed_data %>%
+  filter(Top_layer %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Top_layer_other)
 
 ```
 
-Investigate "NA" for *Soil_surface* and look at unique values for *Soil_surface_other* to check for typos.
+```{r SRER_clean_Lower_1}
 
-```{r clean_Soil_surface}
+# create a data frame for rows with an "NA" for Lower_1
+SRER_NA_Lower_1 <- subset(SRER_trimmed_data, is.na(Lower_1))
 
-# create a data frame for rows with an "NA" for Soil_surface
-SRER_NA_Soil_surface <- subset(SRER_trimmed_data, is.na(Soil_surface))
+# there are 77 rows that have an "NA" for Lower_1
+# none of these rows have values for Lower_1_other, however, one row (SRER007; 12 m) has "D-PGRASS" for Lower_2 - let's assume that should be the value for Lower_1
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER007" & SRER_trimmed_data$Remarks == 12, "Lower_1"] <- "D-PGRASS"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER007" & SRER_trimmed_data$Remarks == 12, "Lower_2"] <- "N"
 
-# there are 138 rows that have an "NA" for Soil_surface (many are from day one transects [SRER006, SRER027, and SRER028] when we did not know the default parameters did not automatically export)
+# the rest of the rows all have values in the Top_layer and/or Top_layer_other column and have "N" or NA values for Lower_2 and Lower_3, so we will assume these "NA" values should all be "N"
+SRER_trimmed_data$Lower_1[is.na(SRER_trimmed_data$Lower_1)] <- "N"
 
-# SRER017 (3): Soil_surface is empty and the points on either side of this point have "BEDROCK" - let's go ahead and assume the Soil_surface for this point should be "BEDROCK" as well
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER017" & SRER_trimmed_data$ID == "50", "Soil_surface"] <- "BEDROCK"
+# rename "N" to "NONE"
+SRER_trimmed_data$Lower_1[SRER_trimmed_data$Lower_1 == "N"] <- "NONE"
 
-# SRER025 (43): Soil_surface is empty and Soil_surface_other is "H_W" while "OTHER" is listed under Litter but Litter_other is empty - let's go ahead and delete "H_W" from Soil_surface_other and paste it into Litter_other instead
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "8", "Soil_surface_other"] <- NA
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER025" & SRER_trimmed_data$ID == "8", "Litter_other"] <- "H_W"
-
-# the default Soil_surface value was "SOIL" - let's go ahead and assume any remaining "NA" values in this column should be "SOIL"
-SRER_trimmed_data$Soil_surface[is.na(SRER_trimmed_data$Soil_surface)] <- "SOIL"
-
-# rename "CRST" to "CRUST"
-SRER_trimmed_data$Soil_surface[SRER_trimmed_data$Soil_surface=="CRST"] <- "CRUST"
-
-# look at unique values for Soil_surface_other
-unique(SRER_trimmed_data$Soil_surface_other)
+# look at unique values for Lower_1_other
+unique(SRER_trimmed_data$Lower_1_other)
 
 # fix typos
 
-# "LPGRASS" should be "L-PGRASS"
-SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other=="LPGRASS"] <- "L-PGRASS"
+# "CAET" should probably be "CAER"
+SRER_trimmed_data$Lower_1_other[SRER_trimmed_data$Lower_1_other == "CAET"] <- "CAER"
 
-# "DPGRASS" should be "D-PGRASS"
-SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other=="DPGRASS"] <- "D-PGRASS"
+# we used the shorthand "EPIP" for epiphyte, so let's rename that since it is not a four-letter species code
+SRER_trimmed_data$Lower_1_other[SRER_trimmed_data$Lower_1_other == "EPIP"] <- "EPIPHYTE"
 
-# SRER028 (47): "LT-H" is listed under Litter and Soil_surface_other is "SOIL_DUNG" but "DUNG" is considered litter - replace "LT-H" with "OTHER" for Litter; replace "NA" for Litter_other with "H_DUNG"; replace "OTHER" with "SOIL" for Soil_surface; replace "SOIL_DUNG" with "NA" for Soil_surface_other
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Litter"] <- "OTHER"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Litter_other"] <- "H_DUNG"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Soil_surface"] <- "SOIL"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID == "52", "Soil_surface_other"] <- NA
+# not sure what "UNKNOWN" is - we only have it for one point (SRER039; 13 m), so we will leave it for now
+
+# double-check unique values for Lower_1_other
+unique(SRER_trimmed_data$Lower_1_other)
+
+# check that all rows with values for Lower_1_other have "L-OTHER" or "D-OTHER" for Lower_1
+SRER_trimmed_data %>%
+  filter(!is.na(Lower_1_other)) %>%
+  distinct(Lower_1)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Top_layer have a value for Lower_1_other
+SRER_trimmed_data %>%
+  filter(Lower_1 %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Lower_1_other)
+
+```
+
+```{r SRER_clean_Lower_2}
+
+# create a data frame for rows with an "NA" for Lower_2
+SRER_NA_Lower_2 <- subset(SRER_trimmed_data, is.na(Lower_2))
+
+# there are 147 rows that have an "NA" for Lower_2
+# all of these rows have "N" or "NA" values values for Lower_2_other, Lower_3, and Lower_3_other, so let's go ahead and assume these should all be "N"
+SRER_trimmed_data$Lower_2[is.na(SRER_trimmed_data$Lower_2)] <- "N"
+
+# rename "N" to "NONE"
+SRER_trimmed_data$Lower_2[SRER_trimmed_data$Lower_2 == "N"] <- "NONE"
+
+# look at unique values for Lower_2_other
+unique(SRER_trimmed_data$Lower_2_other)
+
+# no typos
+
+# check that all rows with values for Lower_2_other have "L-OTHER" or "D-OTHER" for Lower_2
+SRER_trimmed_data %>%
+  filter(!is.na(Lower_2_other)) %>%
+  distinct(Lower_2)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Top_layer have a value for Lower_2_other
+SRER_trimmed_data %>%
+  filter(Lower_2 %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Lower_2_other)
+
+```
+
+```{r SRER_clean_Lower_3}
+
+# create a data frame for rows with an "NA" for Lower_3
+SRER_NA_Lower_3 <- subset(SRER_trimmed_data, is.na(Lower_3))
+
+# there are 163 rows that have an "NA" for Lower_3
+# all of these rows have an "NA" for Lower_3_other and most have "NONE" for Lower_2, so let's go ahead and assume these should all be "N"
+SRER_trimmed_data$Lower_3[is.na(SRER_trimmed_data$Lower_3)] <- "N"
+
+# rename "N" to "NONE"
+SRER_trimmed_data$Lower_3[SRER_trimmed_data$Lower_3 == "N"] <- "NONE"
+
+# look at unique values for Lower_3_other
+unique(SRER_trimmed_data$Lower_3_other)
+
+# no typos
+
+# check that all rows with values for Lower_3_other have "L-OTHER" or "D-OTHER" for Lower_3
+SRER_trimmed_data %>%
+  filter(!is.na(Lower_3_other)) %>%
+  distinct(Lower_3)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Top_layer have a value for Lower_3_other
+SRER_trimmed_data %>%
+  filter(Lower_3 %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Lower_3_other)
 
 ```
 
 Investigate "NA" for *Litter* and look at unique values for *Litter_other* to check for typos.
 
-```{r clean_Litter}
+```{r SRER_clean_Litter}
 
 # create a data frame for rows with an "NA" for Litter
 SRER_NA_Litter <- subset(SRER_trimmed_data, is.na(Litter))
 
 # there are 38 rows that have an "NA" for Litter
 
-# all of these rows also have "NA" in the Litter_other column - let's go ahead and assume any "NA" values in this column should be "N"
+# All of these rows also have "NA" in the Litter_other column. 9 of these rows have "0" for Litter_depth while 27 have "NA" for Litter_depth. 
+# 1 row has "15" and 1 has "10" for Litter_depth
+# Let's assume the one with "15" should have "OTHER" for Litter and "H_W" for Litter_other since it is under an L-SUBS and D-SUBS and has a fairly deep litter depth
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER017" & SRER_trimmed_data$Remarks == 31, "Litter"] <- "OTHER"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER017" & SRER_trimmed_data$Remarks == 31, "Litter_other"] <- "H_W"
+
+# Let's assume the one with "10" should have "LT-H" for Litter since it is in the open and we have many other rows that have a depth of 10 for "LT-H" in the open
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER019" & SRER_trimmed_data$Remarks == 16, "Litter"] <- "LT-H"
+
+# Let's go ahead and assume any remaining "NA" values for Litter should be "N"
 SRER_trimmed_data$Litter[is.na(SRER_trimmed_data$Litter)] <- "N"
 
 # rename "N" to "NONE"
-SRER_trimmed_data$Litter[SRER_trimmed_data$Litter=="N"] <- "NONE"
+SRER_trimmed_data$Litter[SRER_trimmed_data$Litter == "N"] <- "NONE"
 
 # create a new data frame for rows that have "NONE" for Litter but still have a litter depth measurement
-SRER_litter_none_df <- SRER_trimmed_data %>%
+SRER_Litter_none_df <- SRER_trimmed_data %>%
   filter(Litter == "NONE" & Litter_depth > 0)
 
-# these rows have to be deleted because we do not have any information on the type of litter present
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER017" & SRER_trimmed_data$ID=="20"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER019" & SRER_trimmed_data$ID=="37"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER020" & SRER_trimmed_data$ID=="26"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER023" & SRER_trimmed_data$ID=="86"),]
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER024" & SRER_trimmed_data$ID=="28"),]
+# there are 3 rows with "NONE" for Litter but non-zero Litter_depth values
+# Let's assume the two rows with small Litter_depth values (1 and 2 mm) should have "LT-H" for Litter
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER020" & SRER_trimmed_data$Remarks == 26, "Litter"] <- "LT-H"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER024" & SRER_trimmed_data$Remarks == 24, "Litter"] <- "LT-H"
+
+# Let's assume the one with "20" should have "OTHER" for Litter and "H_W" for Litter_other since it is under a PRVE and has a fairly deep litter depth
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER023" & SRER_trimmed_data$Remarks == 11, "Litter"] <- "OTHER"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER023" & SRER_trimmed_data$Remarks == 11, "Litter_other"] <- "H_W"
+
+# create a data frame for rows with an "NA" for Litter_depth
+SRER_NA_Litter_depth <- subset(SRER_trimmed_data, is.na(Litter_depth))
+# all of these rows have "NONE" for Litter
 
 # if Litter_depth is "NA" paste "0"
 SRER_trimmed_data$Litter_depth[is.na(SRER_trimmed_data$Litter_depth)] <- 0
@@ -375,32 +513,37 @@ SRER_trimmed_data$Litter_depth[is.na(SRER_trimmed_data$Litter_depth)] <- 0
 # make sure Litter_depth values are numeric
 SRER_trimmed_data$Litter_depth <- as.numeric(SRER_trimmed_data$Litter_depth)
 
-# SRER017 (3): Litter listed as "OTHER" but the Litter_other column is empty - this row has to be deleted
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER017" & SRER_trimmed_data$ID=="50"),]
+# create a data frame for rows with an "OTHER" for Litter to make sure they have values for Litter_other
+SRER_Litter_other <- SRER_trimmed_data %>%
+  filter(Litter == "OTHER")
+unique(SRER_Litter_other$Litter_other)
 
-# look at univque values of Litter_other to check for typos
+# SRER017 (3 m): Litter listed as "OTHER" but the Litter_other column is empty - given the fairly large depth and data from other points on the transect, this should likely be "H_W"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER017" & SRER_trimmed_data$Remarks == 3, "Litter_other"] <- "H_W"
+
+# look at unique values of Litter_other to check for typos
 unique(SRER_trimmed_data$Litter_other)
 
-# SRER006 (27): change Litter_other from "H_Scat" to "H_DUNG"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER006" & SRER_trimmed_data$ID=="79", "Litter_other"] <- "H_DUNG"
+# SRER006 (27 m): change Litter_other from "H_Scat" to "H_DUNG"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 27, "Litter_other"] <- "H_DUNG"
 
-# SRER023 (24): change Litter_other from "H_D" to "H_DUNG"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER023" & SRER_trimmed_data$ID=="73", "Litter_other"] <- "H_DUNG"
+# SRER023 (24 m): change Litter_other from "H_D" to "H_DUNG"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER023" & SRER_trimmed_data$Remarks == 24, "Litter_other"] <- "H_DUNG"
 
-# SRER019 (32): "DUNG" is already listed for Litter, so delete "CP" from Litter_other (CP must mean cow pie)
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER019" & SRER_trimmed_data$ID=="21", "Litter_other"] <- NA
+# SRER019 (32 m): "DUNG" is already listed for Litter, so delete "CP" from Litter_other (CP must mean cow pie)
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER019" & SRER_trimmed_data$Remarks == 32, "Litter_other"] <- NA
 
-# SRER028 (46): "DUNG" is already listed for Litter, so delete "cow pie remnants" from Litter_other
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID=="53", "Litter_other"] <- NA
+# SRER028 (46 m): "DUNG" is already listed for Litter, so delete "cow pie remnants" from Litter_other
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$Remarks == 46, "Litter_other"] <- NA
 
 # SRER028 (15): change Litter_other from "H-W" to "H_W"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER028" & SRER_trimmed_data$ID=="85", "Litter_other"] <- "H_W"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$Remarks == 15, "Litter_other"] <- "H_W"
 
-# SRER012 (19): change Litter_other from "L_DUNG" to "H_DUNG"
-SRER_trimmed_data[SRER_trimmed_data$Transect=="SRER012" & SRER_trimmed_data$ID=="72", "Litter_other"] <- "H_DUNG"
+# SRER012 (19 m): change Litter_other from "L_DUNG" to "H_DUNG"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER012" & SRER_trimmed_data$Remarks == 19, "Litter_other"] <- "H_DUNG"
 
-# SRER015 (8): "H_H" listed for Litter_other - need to delete this point because we do not know for sure what type of litter is present
-SRER_trimmed_data <- SRER_trimmed_data[!(SRER_trimmed_data$Transect=="SRER015" & SRER_trimmed_data$ID=="45"),]
+# SRER015 (8): "H_H" listed for Litter_other - under a PRVE and fairly large depth - likely should be "H_W"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER015" & SRER_trimmed_data$Remarks == 8, "Litter_other"] <- "H_W"
 
 # if Litter_other is "W_H" paste "H_W"
 for (i in 1:nrow(SRER_trimmed_data)) {
@@ -416,19 +559,133 @@ for (i in 1:nrow(SRER_trimmed_data)) {
     {SRER_trimmed_data$Litter_other[i] <- "H_C"}
 }
 
+# double-check unique values of Litter_other
+unique(SRER_trimmed_data$Litter_other)
+
+# check that all rows with values for Litter_other have "OTHER" for Litter
+SRER_trimmed_data %>%
+  filter(!is.na(Litter_other)) %>%
+  distinct(Litter)
+
+# SRER001 (49 m): Litter is "DUNG" but should probably be "OTHER" because Litter_other is "H_W"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER001" & SRER_trimmed_data$Remarks == 49, "Litter"] <- "OTHER"
+
+# double-check that all rows with values for Litter_other have "OTHER" for Litter
+SRER_trimmed_data %>%
+  filter(!is.na(Litter_other)) %>%
+  distinct(Litter)
+
+# also check that all rows with "OTHER" for Litter have a value for Litter_other
+SRER_trimmed_data %>%
+  filter(Litter == "OTHER") %>%
+  distinct(Litter_other)
+
+# SRER025 (43 m): Litter is "OTHER" and Litter_other is empty but Soil_surface_other is "H_W" - let's go ahead and delete "H_W" from Soil_surface_other and paste it into Litter_other instead
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$Remarks == 43, "Soil_surface_other"] <- NA
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER025" & SRER_trimmed_data$Remarks == 43, "Litter_other"] <- "H_W"
+
+# double-check that all rows with "OTHER" for Litter have a value for Litter_other
+SRER_trimmed_data %>%
+  filter(Litter == "OTHER") %>%
+  distinct(Litter_other)
+
+```
+
+Investigate "NA" for *Soil_surface* and look at unique values for *Soil_surface_other* to check for typos.
+
+```{r SRER_clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+SRER_NA_Soil_surface <- subset(SRER_trimmed_data, is.na(Soil_surface))
+
+# there are 138 rows that have an "NA" for Soil_surface 
+# check which transects these rows belong to
+SRER_NA_Soil_surface %>%
+  count(Transect)
+
+# most are from day one transects [SRER006: 45, SRER027: 44, and SRER028: 43] when we did not know the default parameters did not automatically export
+# SRER014:1, SRER017: 1, SRER018: 1, SRER019: 1, SRER023: 1, SRER025: 1
+# double-check the points on either side of these points
+
+# SRER017 (3 m): Soil_surface is empty and the points on either side of this point have "BEDROCK" - let's go ahead and assume the Soil_surface for this point should be "BEDROCK" as well
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER017" & SRER_trimmed_data$Remarks == 3, "Soil_surface"] <- "BEDROCK"
+
+# the default Soil_surface value was "SOIL" - let's go ahead and assume any remaining "NA" values in this column should be "SOIL"
+SRER_trimmed_data$Soil_surface[is.na(SRER_trimmed_data$Soil_surface)] <- "SOIL"
+
+# rename "CRST" to "CRUST"
+SRER_trimmed_data$Soil_surface[SRER_trimmed_data$Soil_surface == "CRST"] <- "CRUST"
+
+# double-check that no "NA" values for Soil_surface remain
+SRER_trimmed_data %>%
+  filter(is.na(Soil_surface)) %>%
+  nrow()
+
+# look at unique values for Soil_surface_other
+unique(SRER_trimmed_data$Soil_surface_other)
+
+# fix typos
+
+# "LPGRASS" should be "L-PGRASS"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "LPGRASS"] <- "L-PGRASS"
+
+# "DPGRASS" should be "D-PGRASS"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "DPGRASS"] <- "D-PGRASS"
+
+# SRER028 (47 m): "LT-H" is listed under Litter and Soil_surface_other is "SOIL_DUNG" but "DUNG" is considered litter - replace "LT-H" with "OTHER" for Litter; replace "NA" for Litter_other with "H_DUNG"; replace "OTHER" with "SOIL" for Soil_surface; replace "SOIL_DUNG" with "NA" for Soil_surface_other
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$Remarks == 47, "Litter"] <- "OTHER"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$Remarks == 47, "Litter_other"] <- "H_DUNG"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$Remarks == 47, "Soil_surface"] <- "SOIL"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER028" & SRER_trimmed_data$Remarks == 47, "Soil_surface_other"] <- NA
+
+# some of the codes for hitting plant bases are missing "L-" or "D-" to indicate whether they were living or dead - we can deduce this information from the Top_layer and Lower_1, Lower_2, and Lower_3 columns
+# they should all be living
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "CAER"] <- "L-CAER"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "FEWI"] <- "L-FEWI"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "OP"] <- "L-OP"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "PRVE"] <- "L-PRVE"
+
+# rename "AHILL" to "ANTHILL"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "AHILL"] <- "ANTHILL"
+
+# rename "TCAST" to "TERMITETUBE"
+SRER_trimmed_data$Soil_surface_other[SRER_trimmed_data$Soil_surface_other == "TCAST"] <- "TERMITETUBE"
+
+# double-check unique values for Soil_surface_other
+unique(SRER_trimmed_data$Soil_surface_other)
+
+# check that all rows with values for Soil_surface_other have a value of "OTHER" for Soil_surface
+SRER_trimmed_data %>%
+  filter(!is.na(Soil_surface_other)) %>%
+  distinct(Soil_surface)
+
+# also check that all rows with "OTHER" for Soil_surface have a value for Soil_surface_other
+SRER_trimmed_data %>%
+  filter(Soil_surface == "OTHER") %>%
+  distinct(Soil_surface_other)
+
 ```
 
 Investigate "NA" for *Microsite*.
 
-```{r clean_Microsite}
+```{r SRER_clean_Microsite}
 
 # create a data frame for rows with an "NA" for Microsite
 SRER_NA_Microsite <- subset(SRER_trimmed_data, is.na(Microsite))
 
-# there are 122 rows that have an "NA" for Microsite
+# there are 123 rows that have an "NA" for Microsite
 
 # let's investigate Microsite_other before doing anything about the "NA" values
 unique(SRER_NA_Microsite$Microsite_other)
+
+# let's also investigate Top_layer before doing anything about the "NA" values
+unique(SRER_NA_Microsite$Top_layer)
+
+# SRER017 (18 m): Top_layer of "L-SHRUB", so let's change the Microsite to "CANOPY"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER017" & SRER_trimmed_data$Remarks == 18, "Microsite"] <- "CANOPY"
+
+# SRER020 (27 m): Top_layer of "D-SHRUB", so let's change the Microsite to "CANOPY"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER020" & SRER_trimmed_data$Remarks == 27, "Microsite"] <- "CANOPY"
 
 # all of these rows also have "NA" in the Microsite_other column - let's go ahead and assume any "NA" values in this column should be "OPEN"
 SRER_trimmed_data$Microsite[is.na(SRER_trimmed_data$Microsite)] <- "OPEN"
@@ -437,7 +694,7 @@ SRER_trimmed_data$Microsite[is.na(SRER_trimmed_data$Microsite)] <- "OPEN"
 
 Make sure *Top_height* values are numeric.
 
-```{r clean_Top_height}
+```{r SRER_clean_Top_height}
 
 # if Top_height is "NA" paste "0"
 SRER_trimmed_data$Top_height[is.na(SRER_trimmed_data$Top_height)] <- 0
@@ -445,26 +702,105 @@ SRER_trimmed_data$Top_height[is.na(SRER_trimmed_data$Top_height)] <- 0
 # make sure Top_height values are numeric
 SRER_trimmed_data$Top_height <- as.numeric(SRER_trimmed_data$Top_height)
 
+# check for rows that have a Top_layer but have a Top_height of 0
+SRER_Top_layer_0_height <- SRER_trimmed_data %>%
+  filter(Top_layer != "NONE",
+         Top_height == 0)
+
+# SRER006 (23 m): Top_layer of "OTHER" and Top_layer_other of "SEGR" - the points on either side of this point are also SEGR and they both have a top heigh of 135, so this is probably the same individual and should have a top height of 135
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 23, "Top_height"] <- 135
+
+# SRER006 (25 m): Top_layer of "L-PGRASS" and we have a few other "L-PGRASS" on this transect, so let's just calculate the average Top_height and round this value to the nearest 5
+SRER_trimmed_data %>%
+  filter(Transect == "SRER006" & Top_layer == "L-PGRASS") %>%
+  pull(Top_height) %>%
+  mean()
+# the mean Top_height of "L-PGRASS" on transect SRER006 is 12.5 cm, so let's round that up to 15
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 25, "Top_height"] <- 15
+
+# SRER006 (44-46 m): Top_layer of "OTHER" and Top_layer_other of "PRVE" - these are all likely the same individual - there is a photograph associated with the 46 m point, but it's not great - based on the photo and the Top_height of another PRVE on this transect (34-37 m), let's say the Top_height is 300
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 44, "Top_height"] <- 300
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 45, "Top_height"] <- 300
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 46, "Top_height"] <- 300
+
+# SRER026 (43 m): Top_layer of "D-FORB" - there are two other points on this transect with the same Top_layer and they both have a Top_height of 20, so we will go ahead and assume the same Top_height
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER026" & SRER_trimmed_data$Remarks == 43, "Top_height"] <- 20
+
+# SRER026 (47 m): Top_layer of "L-AGRASS" - there are many other points on this transect with the same Top_layer, so let's just calculate the average Top_height and round this value to the nearest 5
+SRER_trimmed_data %>%
+  filter(Transect == "SRER026" & Top_layer == "L-AGRASS") %>%
+  pull(Top_height) %>%
+  mean()
+# the mean Top_height of "L-AGRASS" on transect SRER026 is 8.33 cm, so let's round that up to 10
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER026" & SRER_trimmed_data$Remarks == 47, "Top_height"] <- 10
+
+# SRER030 (1 m): Top_layer of "L-PGRASS" - there are many other points on this transect with the same Top_layer, so let's just calculate the average Top_height and round this value to the nearest 5
+SRER_trimmed_data %>%
+  filter(Transect == "SRER030" & Top_layer == "L-PGRASS") %>%
+  pull(Top_height) %>%
+  mean()
+# the mean Top_height of "L-PGRASS" on transect SRER030 is 43.33 cm, so let's round that up to 45
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER030" & SRER_trimmed_data$Remarks == 1, "Top_height"] <- 45
+
+# there is only one point for the SEGR (27 m) on transect SRER007, we have no way of knowing how tall it was
+# there is only one other D-FORB on transect SRER039, so we can't take an average height with any confidence for the 10 m point
+# this means we still have 2 rows that have a Top_layer but no Top_height, so we need to delete them from our data frame
+SRER_trimmed_data <- SRER_trimmed_data %>%
+  filter(!(Top_layer != "NONE" & Top_height == 0))
+
+# check for rows that have a Top_layer of "NONE" but a Top_height greater than 0
+SRER_Top_layer_NONE_height <- SRER_trimmed_data %>%
+  filter(Top_layer == "NONE",
+         Top_height > 0)
+
+# based on the Top_height and the surrounding points, SRER018 (39 m) should probably have a Top_layer of "L-PGRASS"
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER018" & SRER_trimmed_data$Remarks == 39, "Top_layer"] <- "L-PGRASS"
+
+# it is unclear whether the remaining row (SRER029; 27 m) should have a Top_layer of "L-AGRASS" or "L-PGRASS", so we need to delete it from our data frame
+SRER_trimmed_data <- SRER_trimmed_data %>%
+  filter(!(Top_layer == "NONE" & Top_height > 0))
+
+# make a quick plot to look at Top_height ranges to see if there are any obvious typos
+ggplot(SRER_trimmed_data, aes(x = Top_height)) +
+  geom_histogram(binwidth = 5) +
+  facet_wrap(~ Top_layer, scales = "free")
+
+ggplot(SRER_trimmed_data, aes(x = Top_height)) +
+  geom_histogram(binwidth = 5) +
+  facet_wrap(~ Top_layer_other, scales = "free")
+
+# the most obvious typos for Top_height are for 5 rows (39-43 m) for transect SRER006, they all have a Top_height of 6, but must be the same PRVE individual... this should probably be 600 (and we do have other PRVE individuals that are this tall)
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 39, "Top_height"] <- 600
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 40, "Top_height"] <- 600
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 41, "Top_height"] <- 600
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 42, "Top_height"] <- 600
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER006" & SRER_trimmed_data$Remarks == 43, "Top_height"] <- 600
+
+# another likely typo is for a CEPA on transect SRER012 (1 m), this 5 probably should have been a 50 or a 500, we will go with 50
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER012" & SRER_trimmed_data$Remarks == 1, "Top_height"] <- 50
+
+# lastly, the SEGR with a Top_height of 30, probably should have had a Top_height of 300
+SRER_trimmed_data[SRER_trimmed_data$Transect == "SRER029" & SRER_trimmed_data$Remarks == 8, "Top_height"] <- 300
+
 ```
 
-Save preliminary level 2 data.
+### Save Level 2 Data
 
 ```{r write_SRER_L2}
 
 ### LEVEL 2 DATA ###
+SRER_L2_data <- SRER_trimmed_data
 
-# write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder - write to Dropbox
-write.csv(SRER_trimmed_data, "/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+# define L2 filepath
+SRER_LPI_F24_L2_path <- file.path(DeAD_Data, "SRER", "Transect_LPI_Data",
+                                  "Level_2", "Fall_2024", "csv_file")
 
-SRER_2024 <- read.csv("/Users/AlexiBesser/Desktop/SRER_LPI_L2_Fall_2024_Data.csv")
+# write a csv file of the L2 data (cleaned)
+write.csv(SRER_L2_data, file.path(SRER_LPI_F24_L2_path, "SRER_LPI_L2_Fall_2024_Data.csv"), row.names = FALSE) # this saves it to our shared DeAD Dropbox folder
 
 ```
 
-There is now 1 csv file containing cleaned up data for all 24 transects. This is considered level 2 data.
-
-**L2 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> SRER \> Transect_LPI_Data \> Level_2 \> Fall_2024 \> csv_file
-
-**\^\^\^ STILL NEED TO UPLOAD THIS \^\^\^**
+There is now 1 csv file containing cleaned up data for all 24 transects (a total of 1,197 LPI data points). This is considered level 2 data.
 
 # ONAQ
 
@@ -476,79 +812,92 @@ There is now 1 csv file containing cleaned up data for all 24 transects. This is
 
 50 m transects: ONAQ003, ONAQ009, ONAQ011, ONAQ012, ONAQ013, ONAQ014, ONAQ016, ONAQ020, ONAQ023, ONAQ024, ONAQ025, ONAQ026, ONAQ027, ONAQ028, ONAQ030, ONAQ033, ONAQ034, ONAQ035, ONAQ038, ONAQ042, ONAQ045, ONAQ046, ONAQ048, ONAQ049
 
-**Photographs:** Photographs associated with specific transects or transect points are considered data and are stored in Dropbox (ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> ONAQ \> Transect_LPI_Data \> Photographs \> Fall 2024). Candid photographs can also be found in Dropbox (ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Photos \> 2024 \> ONAQ).
+**Photographs:** Photographs associated with specific transects or transect points are considered data and are stored in Dropbox (*ONAQ_LPI_F24_photo_path*).
 
 ### Read In and Clean Up Data
 
 There are 24 csv files each containing data for one transect. These are considered level 0 data.
 
-**L0 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> ONAQ \> Transect_LPI_Data \> Level_0 \> Fall_2024 \> Tablet \[and\] iPad \> csv_files
-
-The *read_csv* function works with Dropbox links for individual csv files, but I can't figure out how to get it to work for a folder. There is a 'dropbox' R package I can look into at some point.
-
 ```{r import_ONAQ_L0}
 
 ### LEVEL 0 DATA ###
 
-# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
-# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
-# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
-ONAQ_L0_Dropbox_iPad_folder <- "https://www.dropbox.com/scl/fo/p8ty4b4t8cc0oahj8r0qz/AI6eggntfFnfWtGOMWdfogo?rlkey=j0h6p0qv8nbp3iil1gaiqx4rb&st=wdcf8j56&dl=1"
+# define L0 filepath for the tablet data files
+ONAQ_LPI_F24_L0_path_tablet <- file.path(DeAD_Data, "ONAQ",
+                                         "Transect_LPI_Data",
+                                         "Level_0", "Fall_2024",
+                                         "Tablet", "csv_files")
 
-# specify the local folder containing the downloaded L0 transect data from the iPad
-setwd("/Users/AlexiBesser/Downloads/ONAQ_LPI_L0_Fall_2024_iPad_csv_files")
-ONAQ_L0_iPad_data_files <- dir("/Users/AlexiBesser/Downloads/ONAQ_LPI_L0_Fall_2024_iPad_csv_files")
+# define L0 directory for the tablet data files
+ONAQ_LPI_F24_L0_dir_tablet <- dir(ONAQ_LPI_F24_L0_path_tablet)
 
-# read in L0 iPad csv files and create a new column for transect ID
-ONAQ_L1_iPad_data <- read_csv(ONAQ_L0_iPad_data_files, id = "Transect") %>%
-   mutate(Transect = str_remove_all(Transect, "_B.csv"))
+# set working directory for the L0 filepath
+setwd(ONAQ_LPI_F24_L0_path_tablet)
+# read in L0 csv files and simultaneously create an L1 dataframe containing a new column for transect ID
+ONAQ_L1_data_tablet <- read_csv(ONAQ_LPI_F24_L0_dir_tablet,
+                                id = "Transect") %>%
+  mutate(Transect = str_remove_all(Transect, "_A.csv"))
 
-# specify the Dropbox folder containing L0 transect data (individual csv files) and download it locally
-# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
-# FOR NOW: copying and pasting this link in a web browser will automatically download all the csv files
-ONAQ_L0_Dropbox_Tablet_folder <- "https://www.dropbox.com/scl/fo/6gmswjx9lanudb9uvaies/ANbxBrF2PrcbjY1LMjQ-vEY?rlkey=0c3322x286a9ex5nyhyilgx4a&st=f19ywd8n&dl=1"
+# need to remove "Speed" and "Bearing" columns from the tablet data frame to merge it with the Tablet data frame
+ONAQ_L1_data_tablet <- ONAQ_L1_data_tablet %>% select(-Speed, -Bearing)
 
-# specify the local folder containing the downloaded L0 transect data from the Tablet
-setwd("/Users/AlexiBesser/Downloads/ONAQ_LPI_L0_Fall_2024_Tablet_csv_files")
-ONAQ_L0_Tablet_data_files <- dir("/Users/AlexiBesser/Downloads/ONAQ_LPI_L0_Fall_2024_Tablet_csv_files")
+# define L0 filepath for the iPad data files
+ONAQ_LPI_F24_L0_path_ipad <- file.path(DeAD_Data, "ONAQ",
+                                       "Transect_LPI_Data",
+                                       "Level_0", "Fall_2024",
+                                       "iPad", "csv_files")
 
-# read in L0 Tablet csv files and create a new column for transect ID
-ONAQ_L1_Tablet_data <- read_csv(ONAQ_L0_Tablet_data_files, id = "Transect") %>%
-   mutate(Transect = str_remove_all(Transect, "_A.csv"))
+# define L0 directory for the iPad data files
+ONAQ_LPI_F24_L0_dir_ipad <- dir(ONAQ_LPI_F24_L0_path_ipad)
 
-# need to remove "Speed" and "Bearing" columns from the iPad data frame to merge it with the Tablet data frame
-ONAQ_L1_Tablet_data <- ONAQ_L1_Tablet_data %>% select(-Speed, -Bearing)
+# set working directory for the L0 filepath
+setwd(ONAQ_LPI_F24_L0_path_ipad)
+# read in L0 csv files and simultaneously create an L1 dataframe containing a new column for transect ID
+ONAQ_L1_data_ipad <- read_csv(ONAQ_LPI_F24_L0_dir_ipad, id = "Transect") %>%
+  mutate(Transect = str_remove_all(Transect, "_B.csv"))
 
 ### LEVEL 1 DATA ###
 
 # merge iPad and Tablet data frames
-ONAQ_L1_data <- rbind(ONAQ_L1_iPad_data, ONAQ_L1_Tablet_data)
+ONAQ_L1_data <- rbind(ONAQ_L1_data_tablet, ONAQ_L1_data_ipad)
 
-# write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder
-write.csv(ONAQ_L1_data, "/Users/AlexiBesser/Desktop/ONAQ_LPI_L1_Fall_2024_Data.csv")
+# define L1 filepath
+ONAQ_LPI_F24_L1_path <- file.path(DeAD_Data, "ONAQ", "Transect_LPI_Data",
+                                  "Level_1", "Fall_2024", "csv_file")
+
+# write a csv file of the L1 data (compiled)
+write.csv(ONAQ_L1_data, file.path(ONAQ_LPI_F24_L1_path, "ONAQ_LPI_L1_Fall_2024_Data.csv"), row.names = FALSE) # this saves it to our shared DeAD Dropbox folder
 
 ```
 
 There is now 1 csv file containing data for all 24 transects. This is considered level 1 data.
 
-**L1 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> ONAQ \> Transect_LPI_Data \> Level_1 \> Fall_2024 \> csv_file
-
 ```{r read_ONAQ_L1}
 
 # read in L1 transect data
-# HOW TO: open the appropriate Dropbox folder, click the "Share folder" icon in the upper righthand corner, click "Create and copy link" in the window that pops up, then click "Copy link", paste the link here and replace the "0" at the end with "1"
-ONAQ_L1_data <- read.csv("https://www.dropbox.com/scl/fi/0zxgd3gnoyplzxsl794y8/ONAQ_LPI_L1_Fall_2024_Data.csv?rlkey=zyhbona2kakgtupo6falj4ivg&st=vzcjnku6&dl=1")
+ONAQ_L1_data <- read.csv(file.path(ONAQ_LPI_F24_L1_path, "ONAQ_LPI_L1_Fall_2024_Data.csv"))
 
 ```
 
 Investigate and rectify duplicate rows.
 
-NOTE: The code below focuses on rectifying the LPI data and ignores the GPS data (e.g., *Geometry*, *Latitude*, and *Longitude* columns). Re-saving points in the SW Maps Application to capture the correct location creates a duplicate point.
+NOTE: The code below focuses on rectifying the LPI data, giving consideration to GPS data (e.g., *Geometry*, *Latitude*, and *Longitude* columns) when possible.
 
-```{r merge_duplicates}
+```{r ONAQ_merge_duplicates}
 
 # delete rows containing empty transect data columns
 ONAQ_trimmed_data <- ONAQ_L1_data[!(is.na(ONAQ_L1_data$Top_layer) & is.na(ONAQ_L1_data$Top_layer_other) & is.na(ONAQ_L1_data$Lower_1) & is.na(ONAQ_L1_data$Lower_1_other) & is.na(ONAQ_L1_data$Lower_2) & is.na(ONAQ_L1_data$Lower_2_other) & is.na(ONAQ_L1_data$Lower_3) & is.na(ONAQ_L1_data$Lower_3_other) & is.na(ONAQ_L1_data$Litter) & is.na(ONAQ_L1_data$Litter_other) & is.na(ONAQ_L1_data$Soil_surface) & is.na(ONAQ_L1_data$Soil_surface_other) & is.na(ONAQ_L1_data$Microsite) & is.na(ONAQ_L1_data$Microsite_other)),] 
+
+# first, make sure Remarks are numeric, so we can more easily sort by the meter mark
+ONAQ_trimmed_data %>%
+  filter(is.na(suppressWarnings(as.numeric(Remarks))) & !is.na(Remarks)) %>%
+  distinct(Remarks)
+
+# ONAQ030 (Remarks "44_sameJUOS_45-42"): change the Remarks value to just "44"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ030" & ONAQ_trimmed_data$Remarks == "44_sameJUOS_45-42", "Remarks"] <- "44"
+
+# convert Remarks to numeric values
+ONAQ_trimmed_data$Remarks <- as.numeric(ONAQ_trimmed_data$Remarks)
 
 # create a data frame for duplicate points 
 ONAQ_duplicate_points <- ONAQ_trimmed_data %>%
@@ -558,23 +907,23 @@ ONAQ_duplicate_points <- ONAQ_trimmed_data %>%
 
 # there are 8 rows of duplicate points
 
-# ONAQ011 (28): 2 rows containing "28" for Remarks column ("26" and "28" in ID column). These rows have conflicting attributes. There is no row with "26" in the Remarks column for this transect, so the row with the earlier timestamp ("28" in ID column) must be from the 21 m point. 
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ011" & ONAQ_trimmed_data$Remarks == "28" & ONAQ_trimmed_data$ID == "26", "Remarks"] <- "26"
+# ONAQ011 (Remarks "28"): 2 rows containing "28" for Remarks column ("26" and "28" in ID column). These rows have conflicting attributes. There is no row with "26" in the Remarks column for this transect, so the row with the earlier timestamp ("28" in ID column) must be from the 21 m point. 
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ011" & ONAQ_trimmed_data$Remarks == 28 & ONAQ_trimmed_data$ID == "26", "Remarks"] <- 26
 
-# ONAQ020 (16): 2 rows containing "16" for Remarks column ("22" and "23" in ID column). These rows have conflicting attributes. There is no row with "17" in the Remarks column for this transect, so the row with the later timestamp ("23" in ID column) must be from the 17 m point. 
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ020" & ONAQ_trimmed_data$Remarks == "16" & ONAQ_trimmed_data$ID == "23", "Remarks"] <- "17"
+# ONAQ020 (Remarks "16"): 2 rows containing "16" for Remarks column ("22" and "23" in ID column). These rows have conflicting attributes. There is no row with "17" in the Remarks column for this transect, so the row with the later timestamp ("23" in ID column) must be from the 17 m point. 
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ020" & ONAQ_trimmed_data$Remarks == 16 & ONAQ_trimmed_data$ID == "23", "Remarks"] <- 17
 
-# ONAQ026 (20): 2 rows containing "20" for Remarks column ("27" and "28" in ID column). These rows have conflicting attributes. There is no row with "21" in the Remarks column for this transect, so the row with the later timestamp ("28" in ID column) must be from the 21 m point. 
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ026" & ONAQ_trimmed_data$Remarks == "20" & ONAQ_trimmed_data$ID == "28", "Remarks"] <- "21"
+# ONAQ026 (Remarks "20"): 2 rows containing "20" for Remarks column ("27" and "28" in ID column). These rows have conflicting attributes. There is no row with "21" in the Remarks column for this transect, so the row with the later timestamp ("28" in ID column) must be from the 21 m point. 
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ026" & ONAQ_trimmed_data$Remarks == 20 & ONAQ_trimmed_data$ID == "28", "Remarks"] <- 21
 
 # ONAQ045 (36): 2 rows containing "36" for Remarks column ("15" and "16" in ID column). These rows have conflicting attributes. There is no row with "35" in the Remarks column for this transect, so the row with the later timestamp ("16" in ID column) must be from the 35 m point. 
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ045" & ONAQ_trimmed_data$Remarks == "36" & ONAQ_trimmed_data$ID == "16", "Remarks"] <- "35"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ045" & ONAQ_trimmed_data$Remarks == 36 & ONAQ_trimmed_data$ID == "16", "Remarks"] <- 35
 
 ```
 
 There are now 1,200 rows in the trimmed data frame! 24 transects x 50 points per transect = 1,200 data points, so this makes sense, but double-check that there are 50 rows for every transect.
 
-```{r check_rows_per_transect}
+```{r ONAQ_check_rows_per_transect}
 
 # create a character string of the transects
 ONAQ_Transects <- unique(ONAQ_trimmed_data$Transect)
@@ -592,22 +941,22 @@ for (i in ONAQ_Transects) {
 
 Investigate "NA" for *Top_layer* and look at unique values for *Top_layer_other* to check for typos.
 
-```{r clean_Top_layer}
+```{r ONAQ_clean_Top_layer}
 
 # create a data frame for rows with an "NA" for Top_layer
 ONAQ_NA_Top_layer <- subset(ONAQ_trimmed_data, is.na(Top_layer))
 
 # there is 1 row that has an "NA" for Top_layer
 
-# ONAQ003 (6): Lower_1 = "L-OTHER"; Lower_1_other = "JUOS"; Top_height = "290" - which seems reasonable for JUOS; additionally, ONAQ003 (7) has an "L-OTHER" for Top_layer and "JUOS" for Top_layer_other with a similar Top_height, so let's go ahead and assume the top layer should be JUOS
+# ONAQ003 (6 m): Lower_1 = "L-OTHER"; Lower_1_other = "JUOS"; Top_height = "290" - which seems reasonable for JUOS; additionally, ONAQ003 (7 m) has an "L-OTHER" for Top_layer and "JUOS" for Top_layer_other with a similar Top_height, so let's go ahead and assume the top layer should be JUOS
 # Delete "L-OTHER" from Lower_1 and paste it into Top_layer instead; delete "JUOS" from Lower_1_other and paste it into Top_layer_other instead
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Top_layer"] <- "L-OTHER"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Top_layer_other"] <- "JUOS"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Lower_1"] <- "N"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ003" & ONAQ_trimmed_data$Remarks == "6", "Lower_1_other"] <- "N"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ003" & ONAQ_trimmed_data$Remarks == 6, "Top_layer"] <- "L-OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ003" & ONAQ_trimmed_data$Remarks == 6, "Top_layer_other"] <- "JUOS"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ003" & ONAQ_trimmed_data$Remarks == 6, "Lower_1"] <- "N"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ003" & ONAQ_trimmed_data$Remarks == 6, "Lower_1_other"] <- "N"
 
 # rename "N" to "None"
-ONAQ_trimmed_data$Top_layer[ONAQ_trimmed_data$Top_layer=="N"] <- "NONE"
+ONAQ_trimmed_data$Top_layer[ONAQ_trimmed_data$Top_layer == "N"] <- "NONE"
 
 # look at unique values for Top_layer_other
 unique(ONAQ_trimmed_data$Top_layer_other)
@@ -615,86 +964,178 @@ unique(ONAQ_trimmed_data$Top_layer_other)
 # fix typos
 
 # "JKUOS" appears once for transect ONAQ003 - this should be "JUOS"
-ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JKUOS"] <- "JUOS"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "JKUOS"] <- "JUOS"
 
 # "JUOAs" appears once for transect ONAQ030 - this should be "JUOS"
-ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JUOAs"] <- "JUOS"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "JUOAs"] <- "JUOS"
 
 # "JUKOS" appears once for transect ONAQ030 - this should be "JUOS"
-ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="JUKOS"] <- "JUOS"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "JUKOS"] <- "JUOS"
 
 # "D-ARTR" appears once for transect ONAQ042 - this should just be "ARTR"
-ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="D-ARTR"] <- "ARTR"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "D-ARTR"] <- "ARTR"
 
 # "BRTR" appears three times for transect ONAQ034 - this should just be "BRTE"
-ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="BRTR"] <- "BRTE"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "BRTR"] <- "BRTE"
 
 # "ADCR" appears once for transect ONAQ012 - this should just be "AGCR"
-ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other=="ADCR"] <- "AGCR"
+ONAQ_trimmed_data$Top_layer_other[ONAQ_trimmed_data$Top_layer_other == "ADCR"] <- "AGCR"
 
-# not sure what to do about ONAQ033 (25) "UNK1"
+# not sure what to do about ONAQ033 (25 m) "UNK1" - given the other top layers with similar heights (ARTR and ATCO) are shrubs - let's rename it to "L-SHRUB"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ033" & ONAQ_trimmed_data$Remarks == 25, "Top_layer"] <- "L-SHRUB"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ033" & ONAQ_trimmed_data$Remarks == 25, "Top_layer_other"] <- NA
+
+# double-check unique values for Top_layer_other
+unique(ONAQ_trimmed_data$Top_layer_other)
+
+# check that all rows with values for Top_layer_other have "L-OTHER" or "D-OTHER" for Top_layer
+ONAQ_trimmed_data %>%
+  filter(!is.na(Top_layer_other)) %>%
+  distinct(Top_layer)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Top_layer have a value for Top_layer_other
+ONAQ_trimmed_data %>%
+  filter(Top_layer %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Top_layer_other)
+
+# ONAQ049 (9 m): Top_layer of "L-OTHER" with a Top_height of 70 but "NA" listed under Top_layer_other...this is likely an ARTR but to be safe, we will just call it L-SHRUB
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ049" & ONAQ_trimmed_data$Remarks == 9, "Top_layer"] <- "L-SHRUB"
+
+# ONAQ012 (7 m): Top_layer of "L-OTHER" with a Top_height of 35 but "NA" listed under Top_layer_other...this is likely an AGCR
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ012" & ONAQ_trimmed_data$Remarks == 7, "Top_layer_other"] <- "AGCR"
+
+# double-check that all rows with "L-OTHER" or "D-OTHER" for Top_layer have a value for Top_layer_other
+ONAQ_trimmed_data %>%
+  filter(Top_layer %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Top_layer_other)
 
 ```
 
-Investigate "NA" for *Soil_surface* and look at unique values for *Soil_surface_other* to check for typos.
+```{r ONAQ_clean_Lower_1}
 
-```{r clean_Soil_surface}
+# create a data frame for rows with an "NA" for Lower_1
+ONAQ_NA_Lower_1 <- subset(ONAQ_trimmed_data, is.na(Lower_1))
 
-# create a data frame for rows with an "NA" for Soil_surface
-ONAQ_NA_Soil_surface <- subset(ONAQ_trimmed_data, is.na(Soil_surface))
+# there are no rows that have an "NA" for Lower_1
 
-# there is 1 row that has an "NA" for Soil_surface 
+# rename "N" to "NONE"
+ONAQ_trimmed_data$Lower_1[ONAQ_trimmed_data$Lower_1 == "N"] <- "NONE"
 
-# ONAQ011 (34): the default Soil_surface value was "SOIL" and the surrounding points on the transect have a value of "SOIL" for Soil_surface - let's go ahead this should be "SOIL"
-ONAQ_trimmed_data$Soil_surface[is.na(ONAQ_trimmed_data$Soil_surface)] <- "SOIL"
-
-# rename "CRST" to "CRUST"
-ONAQ_trimmed_data$Soil_surface[ONAQ_trimmed_data$Soil_surface=="CRST"] <- "CRUST"
-
-# look at unique values for Soil_surface_other
-unique(ONAQ_trimmed_data$Soil_surface_other)
+# look at unique values for Lower_1_other
+unique(ONAQ_trimmed_data$Lower_1_other)
 
 # fix typos
+# "BRTR" should be "BRTE"
+ONAQ_trimmed_data$Lower_1_other[ONAQ_trimmed_data$Lower_1_other == "BRTR"] <- "BRTE"
 
-# "COW_DUNG" should just be "DUNG"
-ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other=="COW_DUNG"] <- "DUNG"
+# "ARTE" should be "ARTR"
+ONAQ_trimmed_data$Lower_1_other[ONAQ_trimmed_data$Lower_1_other == "ARTE"] <- "ARTR"
 
-# "DPGRASS" should be "D-PGRASS"
-ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other=="DPGRASS"] <- "D-PGRASS"
+# Lower_1_other for ONAQ049 (41 m) is "WOOD", but would Lower_1 is "D-OTHER" and "WOOD" is listed for the Microsite, so let's change Lower_1 to "D-SHRUB" and delete "WOOD" from Lower_1_other
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ049" & ONAQ_trimmed_data$Remarks == 41, "Lower_1"] <- "D-SHRUB"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ049" & ONAQ_trimmed_data$Remarks == 41, "Lower_1_other"] <- NA
+
+# we keep "NA" values for all the "other" columns
+ONAQ_trimmed_data$Lower_1_other[ONAQ_trimmed_data$Lower_1_other == "N"] <- NA
+
+# double-check unique values for Lower_1_other
+unique(ONAQ_trimmed_data$Lower_1_other)
+
+# check that all rows with values for Lower_1_other have "L-OTHER" or "D-OTHER" for Lower_1
+ONAQ_trimmed_data %>%
+  filter(!is.na(Lower_1_other)) %>%
+  distinct(Lower_1)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Lower_1 have a value for Lower_1_other
+ONAQ_trimmed_data %>%
+  filter(Lower_1 %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Lower_1_other)
+
+```
+
+```{r ONAQ_clean_Lower_2}
+
+# create a data frame for rows with an "NA" for Lower_2
+ONAQ_NA_Lower_2 <- subset(ONAQ_trimmed_data, is.na(Lower_2))
+
+# there are 3 rows that have an "NA" for Lower_2
+# 2 of these rows have "NONE" for Lower_1 and all of these rows have "N" for Lower_3, so let's go ahead and assume these should all be "N"
+ONAQ_trimmed_data$Lower_2[is.na(ONAQ_trimmed_data$Lower_2)] <- "N"
+
+# rename "N" to "NONE"
+ONAQ_trimmed_data$Lower_2[ONAQ_trimmed_data$Lower_2 == "N"] <- "NONE"
+
+# look at unique values for Lower_2_other
+unique(ONAQ_trimmed_data$Lower_2_other)
+
+# no typos
+
+# check that all rows with values for Lower_2_other have "L-OTHER" or "D-OTHER" for Lower_2
+ONAQ_trimmed_data %>%
+  filter(!is.na(Lower_2_other)) %>%
+  distinct(Lower_2)
+
+# also check that all rows with "L-OTHER" or "D-OTHER" for Lower_2 have a value for Lower_2_other
+ONAQ_trimmed_data %>%
+  filter(Lower_2 %in% c("L-OTHER", "D-OTHER")) %>%
+  distinct(Lower_2_other)
+
+```
+
+```{r ONAQ_clean_Lower_3}
+
+# create a data frame for rows with an "NA" for Lower_3
+ONAQ_NA_Lower_3 <- subset(ONAQ_trimmed_data, is.na(Lower_3))
+
+# there are no rows that have "NA" for Lower_3
+
+# rename "N" to "NONE"
+ONAQ_trimmed_data$Lower_3[ONAQ_trimmed_data$Lower_3 == "N"] <- "NONE"
+
+# look at unique values for Lower_3_other
+unique(ONAQ_trimmed_data$Lower_3_other)
+
+# ONAQ016 (27 m): has "LICHEN" for Lower_3_other, we will add this to the Soil_surface_other column instead
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ016" & ONAQ_trimmed_data$Remarks == 27, "Soil_surface_other"] <- "MOSS_LICHEN"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ016" & ONAQ_trimmed_data$Remarks == 27, "Lower_3"] <- "NONE"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ016" & ONAQ_trimmed_data$Remarks == 27, "Lower_3_other"] <- NA
+
+# double-check unique values for Lower_3_other
+unique(ONAQ_trimmed_data$Lower_3_other)
 
 ```
 
 Investigate "NA" for *Litter* and look at unique values for *Litter_other* to check for typos.
 
-```{r clean_Litter}
+```{r ONAQ_clean_Litter}
 
 # create a data frame for rows with an "NA" for Litter
 ONAQ_NA_Litter <- subset(ONAQ_trimmed_data, is.na(Litter))
 
 # there is 1 row that has an "NA" for Litter
 
-# ONAQ028 (11): also has an "NA" in the Litter_other column and zeros for all the litter depth measurments, so this should be "N"
+# ONAQ028 (11 m): also has an "NA" in the Litter_other column and zeros for all the litter depth measurments, so this should be "N"
 ONAQ_trimmed_data$Litter[is.na(ONAQ_trimmed_data$Litter)] <- "N"
 
 # rename "N" to "NONE"
-ONAQ_trimmed_data$Litter[ONAQ_trimmed_data$Litter=="N"] <- "NONE"
+ONAQ_trimmed_data$Litter[ONAQ_trimmed_data$Litter == "N"] <- "NONE"
 
 # create a new data frame for rows that have "NONE" for Litter but still have litter depth measurements
-ONAQ_litter_none_df <- ONAQ_trimmed_data %>%
+ONAQ_Litter_none_df <- ONAQ_trimmed_data %>%
   filter(Litter == "NONE" & Litter_depth_center > 0 & Litter_depth_north > 0
          & Litter_depth_east > 0 & Litter_depth_south > 0 & Litter_depth_west > 0)
 
 # there are 3 rows
 
-# ONAQ030 (34): has "H_W" listed under Litter_other, so Litter should be "OTHER"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ030" & ONAQ_trimmed_data$ID=="17" & ONAQ_trimmed_data$Remarks=="34", "Litter"] <- "OTHER"
+# ONAQ030 (34 m): has "H_W" listed under Litter_other, so Litter should be "OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ030" & ONAQ_trimmed_data$Remarks == 34, "Litter"] <- "OTHER"
 
-# ONAQ023 (1): has high litter depth measurements (9-25 mm) and is under an ARTR, so let's go ahead and assume this point should have "OTHER" for Litter and "H_W" for Litter_other
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ023" & ONAQ_trimmed_data$ID=="7" & ONAQ_trimmed_data$Remarks=="1", "Litter"] <- "OTHER"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ023" & ONAQ_trimmed_data$ID=="7" & ONAQ_trimmed_data$Remarks=="1", "Litter_other"] <- "H_W"
+# ONAQ023 (1 m): has high litter depth measurements (9-25 mm) and is under an ARTR, so let's go ahead and assume this point should have "OTHER" for Litter and "H_W" for Litter_other
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ023" & ONAQ_trimmed_data$Remarks == 1, "Litter"] <- "OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ023" & ONAQ_trimmed_data$Remarks == 1, "Litter_other"] <- "H_W"
 
-# ONAQ012 (1): has low litter depth measurements (9-25 mm) and is under a D-PGRASS, so let's go ahead and assume this point should have "LT-H" for Litter
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ023" & ONAQ_trimmed_data$ID=="7" & ONAQ_trimmed_data$Remarks=="1", "Litter"] <- "LT-H"
+# ONAQ012 (50 m): has low litter depth measurements (1-4 mm) and is under a D-PGRASS, so let's go ahead and assume this point should have "LT-H" for Litter
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ023" & ONAQ_trimmed_data$Remarks == 50, "Litter"] <- "LT-H"
 
 # if Litter_depth values are "NA" paste "0"
 ONAQ_trimmed_data$Litter_depth_center[is.na(ONAQ_trimmed_data$Litter_depth_center)] <- 0
@@ -710,18 +1151,120 @@ ONAQ_trimmed_data$Litter_depth_east <- as.numeric(ONAQ_trimmed_data$Litter_depth
 ONAQ_trimmed_data$Litter_depth_south <- as.numeric(ONAQ_trimmed_data$Litter_depth_south)
 ONAQ_trimmed_data$Litter_depth_west <- as.numeric(ONAQ_trimmed_data$Litter_depth_west)
 
-# look at univque values of Litter_other to check for typos
+# check for rows that have Litter but have Litter_depths of 0
+ONAQ_Litter_0_depth <- ONAQ_trimmed_data %>%
+  filter(!Litter == "NONE" & Litter_depth_center == 0 & Litter_depth_north == 0
+         & Litter_depth_east == 0 & Litter_depth_south == 0 & Litter_depth_west == 0)
+
+# there are 8 rows that have Litter but have Litter_depths of 0, however, all of these are for dung, cactus litter, or woody litter, so this is fine
+
+# look at unique values of Litter_other to check for typos
 unique(ONAQ_trimmed_data$Litter_other)
 
-# ONAQ027 (20): "DUNG" listed under Litter and "H_2" listed under Litter_other, so let's change Litter to "OTHER" and Litter_other to "H_DUNG"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ027" & ONAQ_trimmed_data$ID=="26" & ONAQ_trimmed_data$Remarks=="20", "Litter"] <- "OTHER"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ027" & ONAQ_trimmed_data$ID=="26" & ONAQ_trimmed_data$Remarks=="20", "Litter_other"] <- "H_DUNG"
+# ONAQ027 (20 m): "DUNG" listed under Litter and "H_2" listed under Litter_other, so let's change Litter to "OTHER" and Litter_other to "H_DUNG"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ027" & ONAQ_trimmed_data$Remarks == 20, "Litter"] <- "OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ027" & ONAQ_trimmed_data$Remarks == 20, "Litter_other"] <- "H_DUNG"
+
+# ONAQ030 (22 m): "W" for Litter_other should just be "LT-W" for Litter
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ030" & ONAQ_trimmed_data$Remarks == 22, "Litter"] <- "LT-W"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ030" & ONAQ_trimmed_data$Remarks == 22, "Litter_other"] <- NA
+
+# double-check unique values of Litter_other
+unique(ONAQ_trimmed_data$Litter_other)
+
+# check that all rows with values for Litter_other have "OTHER" for Litter
+ONAQ_trimmed_data %>%
+  filter(!is.na(Litter_other)) %>%
+  distinct(Litter)
+
+# ONAQ030 (1 m) has "W_B" for Litter_other, so let's change the Litter value from "LT-W" to "OTHER" for consistency
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ030" & ONAQ_trimmed_data$Remarks == 1, "Litter"] <- "OTHER"
+
+# ONAQ023 (1 m) has "H_W" for Litter_other, so let's change the Litter value from "LT-H" to "OTHER" for consistency
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ023" & ONAQ_trimmed_data$Remarks == 1, "Litter"] <- "OTHER"
+
+# ONAQ026 (21 m) has "H_W" for Litter_other, so the Litter value of "DUNG" was probably a mistake, let's change it to "OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ026" & ONAQ_trimmed_data$Remarks == 21, "Litter"] <- "OTHER"
+
+# ONAQ034 (45 m) has "H_W" for Litter_other, so the Litter value of "NONE" was probably a mistake, let's change it to "OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ034" & ONAQ_trimmed_data$Remarks == 45, "Litter"] <- "OTHER"
+
+# double-check that all rows with values for Litter_other have "OTHER" for Litter
+ONAQ_trimmed_data %>%
+  filter(!is.na(Litter_other)) %>%
+  distinct(Litter)
+
+# also check that all rows with "OTHER" for Litter have a value for Litter_other
+ONAQ_trimmed_data %>%
+  filter(Litter == "OTHER") %>%
+  distinct(Litter_other)
+
+```
+
+Investigate "NA" for *Soil_surface* and look at unique values for *Soil_surface_other* to check for typos.
+
+```{r ONAQ_clean_Soil_surface}
+
+# create a data frame for rows with an "NA" for Soil_surface
+ONAQ_NA_Soil_surface <- subset(ONAQ_trimmed_data, is.na(Soil_surface))
+
+# there is 1 row that has an "NA" for Soil_surface 
+
+# ONAQ011 (34 m): the default Soil_surface value was "SOIL" and the surrounding points on the transect have a value of "SOIL" for Soil_surface - let's go ahead this should be "SOIL"
+ONAQ_trimmed_data$Soil_surface[is.na(ONAQ_trimmed_data$Soil_surface)] <- "SOIL"
+
+# rename "CRST" to "CRUST"
+ONAQ_trimmed_data$Soil_surface[ONAQ_trimmed_data$Soil_surface == "CRST"] <- "CRUST"
+
+# look at unique values for Soil_surface_other
+unique(ONAQ_trimmed_data$Soil_surface_other)
+
+# fix typos
+
+# "COW_DUNG" should just be "DUNG"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "COW_DUNG"] <- "DUNG"
+
+# "DPGRASS" should be "D-PGRASS"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "DPGRASS"] <- "D-PGRASS"
+
+# the only "AGCR" should be "D-AGCR"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "AGCR"] <- "D-AGCR"
+
+# the only "ARTR" should be "D-ARTR"
+ONAQ_trimmed_data$Soil_surface_other[ONAQ_trimmed_data$Soil_surface_other == "ARTR"] <- "D-ARTR"
+
+# ONAQ013 (26 m): "PSSP" should be "D-PSSP"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ013" & ONAQ_trimmed_data$Remarks == 26, "Soil_surface_other"] <- "D-PSSP"
+
+# ONAQ026 (22 m): "PSSP" should be "L-PSSP"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ026" & ONAQ_trimmed_data$Remarks == 22, "Soil_surface_other"] <- "L-PSSP"
+
+# double-check unique values for Soil_surface_other
+unique(ONAQ_trimmed_data$Soil_surface_other)
+
+# check that all rows with values for Soil_surface_other have a value of "OTHER" for Soil_surface
+ONAQ_trimmed_data %>%
+  filter(!is.na(Soil_surface_other)) %>%
+  distinct(Soil_surface)
+
+# ONAQ034 (44 m) has "MOSS" for Soil_surface_other, so let's change the Soil_surface value to "OTHER"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ034" & ONAQ_trimmed_data$Remarks == 44, "Soil_surface"] <- "OTHER"
+
+# double-check that all rows with values for Soil_surface_other have a value of "OTHER" for Soil_surface
+ONAQ_trimmed_data %>%
+  filter(!is.na(Soil_surface_other)) %>%
+  distinct(Soil_surface)
+
+# also check that all rows with "OTHER" for Soil_surface have a value for Soil_surface_other
+ONAQ_trimmed_data %>%
+  filter(Soil_surface == "OTHER") %>%
+  distinct(Soil_surface_other)
 
 ```
 
 Investigate "NA" for *Microsite*.
 
-```{r clean_Microsite}
+```{r ONAQ_clean_Microsite}
 
 # create a data frame for rows with an "NA" for Microsite
 ONAQ_NA_Microsite <- subset(ONAQ_trimmed_data, is.na(Microsite))
@@ -736,8 +1279,8 @@ unique(ONAQ_NA_Microsite$Microsite_other)
 # let's also investigate Top_layer before doing anything about the "NA" values
 unique(ONAQ_NA_Microsite$Top_layer)
 
-# ONAQ049 (9): Top_layer of "L-OTHER" with a Top_height of 70 but "NA" listed under Top_layer_other (likely an ARTR, but we will address thi), so let's change the Microsite to "CANOPY"
-ONAQ_trimmed_data[ONAQ_trimmed_data$Transect=="ONAQ049" & ONAQ_trimmed_data$ID=="15" & ONAQ_trimmed_data$Remarks=="9", "Microsite"] <- "CANOPY"
+# ONAQ049 (9 m): Top_layer of "L-SHRUB", so let's change the Microsite to "CANOPY"
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ049" & ONAQ_trimmed_data$Remarks == 9, "Microsite"] <- "CANOPY"
 
 # let's go ahead and assume the 4 remaining "NA" values in this column should be "OPEN"
 ONAQ_trimmed_data$Microsite[is.na(ONAQ_trimmed_data$Microsite)] <- "OPEN"
@@ -746,7 +1289,7 @@ ONAQ_trimmed_data$Microsite[is.na(ONAQ_trimmed_data$Microsite)] <- "OPEN"
 
 Make sure *Top_height* values are numeric.
 
-```{r clean_Top_height}
+```{r ONAQ_clean_Top_height}
 
 # if Top_height is "NA" paste "0"
 ONAQ_trimmed_data$Top_height[is.na(ONAQ_trimmed_data$Top_height)] <- 0
@@ -754,26 +1297,71 @@ ONAQ_trimmed_data$Top_height[is.na(ONAQ_trimmed_data$Top_height)] <- 0
 # make sure Top_height values are numeric
 ONAQ_trimmed_data$Top_height <- as.numeric(ONAQ_trimmed_data$Top_height)
 
+# check for rows that have a Top_layer but have a Top_height of 0
+ONAQ_Top_layer_0_height <- ONAQ_trimmed_data %>%
+  filter(Top_layer != "NONE",
+         Top_height == 0)
+
+# there are 2 rows that have a Top_layer but no Top_height, they are both from ONAQ038
+# one of them (27 m) is for a D-PGRASS and we have a lot of these on this transect, so let's just calculate the average Top_height and round this value to the nearest 5
+ONAQ_trimmed_data %>%
+  filter(Transect == "ONAQ038" & Top_layer == "D-PGRASS") %>%
+  pull(Top_height) %>%
+  mean()
+# the mean Top_height of D-PGRASS on transect ONAQ038 is 34.32 cm, so let's round that up to 35
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ038" & ONAQ_trimmed_data$Remarks == 27, "Top_height"] <- 35
+
+# the other (2 m) is for a D-SUBS and we don't have any other rows with D-SUBS as a Top_layer on this transect, so we will have to delete this row
+ONAQ_trimmed_data <- ONAQ_trimmed_data %>%
+  filter(!(Top_layer != "NONE" & Top_height == 0))
+
+# check for rows that have a Top_layer of "NONE" but a Top_height greater than 0
+ONAQ_Top_layer_NONE_height <- ONAQ_trimmed_data %>%
+  filter(Top_layer == "NONE",
+         Top_height > 0)
+
+# there is 1 row that has "NONE" for Top_layer but a Top_height of 5, given this value and the fact that many of the rows for this transect similar Top_height values for a Top_layer of "D-FORB", let's say this row should have a Top_layer of "D-FORB" 
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ035" & ONAQ_trimmed_data$Remarks == 41, "Top_layer"] <- "D-FORB"
+
+# make a quick plot to look at Top_height ranges to see if there are any obvious typos
+ggplot(ONAQ_trimmed_data, aes(x = Top_height)) +
+  geom_histogram(binwidth = 5) +
+  facet_wrap(~ Top_layer, scales = "free")
+
+ggplot(ONAQ_trimmed_data, aes(x = Top_height)) +
+  geom_histogram(binwidth = 5) +
+  facet_wrap(~ Top_layer_other, scales = "free")
+
+# the only obvious typos for Top_height are for 3 rows with BRTE as the Top_layer - BRTE is an annual grass that really shouldn't get much taller than 50 cm
+# let's first double-check that these rows belong to transects that have other points with BRTE then decide what to do
+
+# ONAQ009 (29 m) should probably be D-PGRASS? Double-check field notes
+
+# ONAQ024 (42 m) is on a transect that does have other rows with BRTE, but a Top_height of 100 is far too big, this is probably a typo and should be 10
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ024" & ONAQ_trimmed_data$Remarks == 42, "Top_height"] <- 10
+
+# ONAQ033 (14 m) is also on a transect that has other rows with BRTE, but a Top_height of 335 is crazy big, this is probably a typo and should be 35
+ONAQ_trimmed_data[ONAQ_trimmed_data$Transect == "ONAQ033" & ONAQ_trimmed_data$Remarks == 14, "Top_height"] <- 35
+
 ```
 
-Save preliminary level 2 data.
+### Save Level 2 Data
 
-```{r write_SRER_L2}
+```{r write_ONAQ_L2}
 
 ### LEVEL 2 DATA ###
+ONAQ_L2_data <- ONAQ_trimmed_data
 
-# write a csv file of the L1 transect data (compiled), save it locally, then upload it to the appropriate Dropbox folder
-write.csv(ONAQ_trimmed_data, "/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+# define L2 filepath
+ONAQ_LPI_F24_L2_path <- file.path(DeAD_Data, "ONAQ", "Transect_LPI_Data",
+                                  "Level_2", "Fall_2024", "csv_file")
 
-ONAQ_2024 <- read.csv("/Users/AlexiBesser/Desktop/ONAQ_LPI_L2_Fall_2024_Data.csv")
+# write a csv file of the L2 data (cleaned)
+write.csv(ONAQ_L2_data, file.path(ONAQ_LPI_F24_L2_path, "ONAQ_LPI_L2_Fall_2024_Data.csv"), row.names = FALSE) # this saves it to our shared DeAD Dropbox folder
 
 ```
 
-There is now 1 csv file containing cleaned up data for all 24 transects. This is considered level 2 data.
-
-**L2 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> ONAQ \> Transect_LPI_Data \> Level_2 \> Fall_2024 \> csv_file
-
-**\^\^\^ STILL NEED TO UPLOAD THIS \^\^\^**
+There is now 1 csv file containing cleaned up data for all 24 transects (a total of 1,199 LPI data points). This is considered level 2 data.
 
 # JORN
 
@@ -787,15 +1375,11 @@ There is now 1 csv file containing cleaned up data for all 24 transects. This is
 
 ![Transects completed at JORN from 19-23 November 2024.](JORN_transects_final_fall_2024.jpg)
 
-**Photographs:** Photographs associated with specific transects or transect points are considered data and are stored in Dropbox (ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> JORN \> Transect_LPI_Data \> Photographs \> Fall 2024). Candid photographs can also be found in Dropbox (ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Photos \> 2024 \> JORN).
+**Photographs:** Photographs associated with specific transects or transect points are considered data and are stored in Dropbox (*JORN_LPI_F24_photo_path*).
 
 ### Read In and Clean Up Data
 
 There are 23 csv files each containing data for one transect. These are considered level 0 data.
-
-**L0 Dropbox Filepath:** ASU NSF Dryland Decomposition \> Field&LabCircle \> Field_Data \> JORN \> Transect_LPI_Data \> Level_0 \> Fall_2024 \> csv_files
-
-The *read_csv* function works with Dropbox links for individual csv files, but I can't figure out how to get it to work for a folder. There is a 'dropbox' R package I can look into at some point.
 
 ```{r import_JORN_L0}
 

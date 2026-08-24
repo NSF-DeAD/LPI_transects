@@ -1,0 +1,102 @@
+---
+title: "DeAD_NEON_Sites_Map"
+author: "Alexi Besser"
+format: html
+editor: visual
+---
+
+# README
+
+Code adapted from Heather Throop and Isabel Torres.
+
+# Preparation Steps
+
+```{r load_packages}
+
+library(tidyverse)
+library(terra)
+library(raster)
+library(maps)
+library(tidyterra)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(geodata)
+library(grid)
+
+```
+
+```{r load_data}
+
+# read in site info data
+df_sites <- read.csv("~/Desktop/Github/LPI_transects/DeAD_LPI_sites_map.csv")
+
+colnames(df_sites) <- c("Site", "lat_dec", "long_dec")
+
+```
+
+# Map
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+library(sf)
+library(maps)
+
+study_site_map <- ggplot() +
+  borders("state", colour = "black", fill = "white", linewidth = 0.5) +
+  geom_sf(
+    data = eco_sub,
+    fill = c("darkgoldenrod", "sienna2", "darkseagreen3", "olivedrab"),
+    color = "black",
+    linewidth = 0.75,
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_sites,
+    aes(x = long_dec, y = lat_dec),
+    color = "black",
+    size = 3,
+    inherit.aes = FALSE
+  ) +
+  geom_text(
+    data = df_sites,
+    aes(x = long_dec, y = lat_dec, label = Site),
+    nudge_y = 0.25,
+    hjust = 0.5,
+    vjust = 0,
+    size = 6,
+    fontface = "bold",
+    max.overlaps = Inf,
+    inherit.aes = FALSE
+  ) +
+  geom_sf_text(
+    data = eco_lab,
+    aes(label = US_L3NAME),
+    size = 4,
+    color = "black",
+    fontface = "plain",
+    inherit.aes = FALSE
+  ) +
+  coord_sf(
+    xlim = c(-121, -105),
+    ylim = c(31, 45),
+    expand = FALSE
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(color = "black", size = 12),
+    axis.text.y = element_text(color = "black", size = 12),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+    axis.ticks = element_line(color = "black", linewidth = 0.75),
+    panel.background = element_rect(fill = "black", color = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) 
+
+study_site_map
+
+ggsave("Map.pdf", plot = last_plot(), height = 8, width = 7)
+```
